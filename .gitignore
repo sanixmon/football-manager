@@ -1,0 +1,15 @@
+# Gradle
+.gradle/
+build/
+
+# Kotlin plugin data
+.kotlin/
+
+# IDE
+.idea/
+*.iml
+out/
+
+# OS / local
+.DS_Store
+local.properties
