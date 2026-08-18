@@ -5,11 +5,13 @@ import com.footballmanager.model.MIN_ATTRIBUTE
 import com.footballmanager.model.Player
 import com.footballmanager.model.PositionGroup
 import kotlin.math.roundToInt
+import kotlinx.serialization.Serializable
 
 /**
  * A team's match-relevant strength on the same 1..100 scale as attributes,
  * plus optional [tactics] that modify attack/defense for a match.
  */
+@Serializable
 data class Team(
     val clubId: Long,
     val attack: Int,

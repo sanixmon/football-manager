@@ -15,8 +15,12 @@ import com.footballmanager.model.Position
 import com.footballmanager.model.Squad
 import com.footballmanager.model.SquadStatus
 import com.footballmanager.seed.SeedData
+import com.footballmanager.simulation.KotlinRandomSource
+import com.footballmanager.simulation.MatchEngine
+import com.footballmanager.simulation.season.SeasonSimulator
 import java.nio.file.Files
 import java.time.LocalDate
+import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -57,6 +61,37 @@ class GameSerializationTest {
         assertEquals(game.clubs, loaded.clubs)
         assertEquals(game.players, loaded.players)
         assertEquals(game.competitions, loaded.competitions)
+    }
+
+    @Test
+    fun `round trip preserves the season result exactly`() {
+        val game = SeedData.game()
+        val league = game.competitions.getValue(SeedData.LEAGUE_ID) as League
+        val teams = SeedData.teams(game)
+
+        val result = SeasonSimulator(MatchEngine(KotlinRandomSource(Random(42))))
+            .simulate(league, teams, SeedData.START_DATE)
+
+        val saved = game.copy(lastSeason = result)
+        val path = tempPath("season-save.json")
+        saved.saveToFile(path)
+        val loaded = Game.loadFromFile(path)
+
+        val loadedSeason = requireNotNull(loaded.lastSeason)
+
+        // full structural equality (league + fixtures + results + standings)
+        assertEquals(result, loadedSeason)
+        assertEquals(result.champion, loadedSeason.champion)
+        assertEquals(result.standings.entries, loadedSeason.standings.entries)
+
+        // explicit points / GD / order comparison on the loaded table
+        val before = result.standings.entries.map {
+            Triple(it.team.clubId, it.points, it.goalDifference)
+        }
+        val after = loadedSeason.standings.entries.map {
+            Triple(it.team.clubId, it.points, it.goalDifference)
+        }
+        assertEquals(before, after)
     }
 
     private fun tempPath(name: String): String =

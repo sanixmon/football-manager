@@ -1,6 +1,9 @@
 package com.footballmanager.simulation
 
+import kotlinx.serialization.Serializable
+
 /** Team shape. Modifiers shift [Team] attack/defense, not player ratings. */
+@Serializable
 enum class Formation(
     val label: String,
     val attackModifier: Double,
@@ -12,6 +15,7 @@ enum class Formation(
 }
 
 /** Managerial intent. Stacks with [Formation] (multiplied together). */
+@Serializable
 enum class Mentality(
     val label: String,
     val attackModifier: Double,
@@ -26,6 +30,7 @@ enum class Mentality(
  * A static per-match tactical setup: formation and mentality, applied together
  * as multipliers on a team's attack and defense.
  */
+@Serializable
 data class Tactics(
     val formation: Formation = Formation.FOUR_FOUR_TWO,
     val mentality: Mentality = Mentality.BALANCED,

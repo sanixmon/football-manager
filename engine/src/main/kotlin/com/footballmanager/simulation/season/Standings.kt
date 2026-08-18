@@ -2,11 +2,13 @@ package com.footballmanager.simulation.season
 
 import com.footballmanager.simulation.MatchResult
 import com.footballmanager.simulation.Team
+import kotlinx.serialization.Serializable
 
 /**
  * A league table ordered by points, then goal difference, then goals scored.
  * Entries are produced by [compute].
  */
+@Serializable
 data class Standings(
     val entries: List<StandingEntry>,
 ) {

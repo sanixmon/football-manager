@@ -1,8 +1,10 @@
 package com.footballmanager.simulation.season
 
 import com.footballmanager.simulation.Team
+import kotlinx.serialization.Serializable
 
 /** A team's row in the league table. */
+@Serializable
 data class StandingEntry(
     val team: Team,
     val played: Int = 0,

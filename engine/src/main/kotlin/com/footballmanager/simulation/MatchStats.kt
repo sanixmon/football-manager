@@ -1,5 +1,8 @@
 package com.footballmanager.simulation
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class TeamStats(
     val possessions: Int = 0,
     val shots: Int = 0,
@@ -7,6 +10,7 @@ data class TeamStats(
     val goals: Int = 0,
 )
 
+@Serializable
 data class MatchStats(
     val ticks: Int,
     val home: TeamStats,

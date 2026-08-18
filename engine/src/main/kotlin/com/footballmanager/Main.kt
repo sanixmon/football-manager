@@ -24,25 +24,41 @@ fun main() {
     println("Clubs  : ${teams.size}")
     println("Rounds : ${result.fixtures.maxOf { it.round }} (${result.fixtures.size} fixtures)")
     println()
+    println("--- Standings before save ---")
     printStandings(result.standings.entries, game)
     println()
     val champion = game.club(result.champion.team.clubId)
     println("Champion: ${champion.name} — ${result.champion.points} pts (GD ${result.champion.goalDifference})")
 
-    // ---- save / load round-trip ----
+    // ---- attach the completed season to the game, then save ----------------
+    val savedGame = game.copy(lastSeason = result)
     val savePath = "demo-save.json"
-    game.saveToFile(savePath)
+    savedGame.saveToFile(savePath)
+
+    // ---- load from disk and re-print standings from the LOADED object --------
     val loaded = Game.loadFromFile(savePath)
-    val identical = loaded.name == game.name &&
-        loaded.currentDate == game.currentDate &&
-        loaded.clubs == game.clubs &&
-        loaded.players == game.players &&
-        loaded.competitions == game.competitions &&
-        loaded.calendar.fixtures() == game.calendar.fixtures()
+    val loadedSeason = loaded.lastSeason ?: error("loaded save has no season result")
 
     println()
     println("Save file   : $savePath (${File(savePath).length()} bytes)")
-    println("Load OK     : clubs=${loaded.clubs.size}, players=${loaded.players.size}, competitions=${loaded.competitions.size}")
+    println("Load OK     : clubs=${loaded.clubs.size}, players=${loaded.players.size}, competitions=${loaded.competitions.size}, season=yes")
+    println()
+    println("--- Standings after load (printed from loaded object) ---")
+    printStandings(loadedSeason.standings.entries, loaded)
+    println()
+    val loadedChampion = loaded.club(loadedSeason.champion.team.clubId)
+    println("Loaded champion: ${loadedChampion.name} — ${loadedSeason.champion.points} pts (GD ${loadedSeason.champion.goalDifference})")
+
+    // ---- round-trip verification --------------------------------------------
+    val identical = loaded.name == savedGame.name &&
+        loaded.currentDate == savedGame.currentDate &&
+        loaded.clubs == savedGame.clubs &&
+        loaded.players == savedGame.players &&
+        loaded.competitions == savedGame.competitions &&
+        loaded.calendar.fixtures() == savedGame.calendar.fixtures() &&
+        loaded.lastSeason == result
+
+    println()
     println("Round-trip  : ${if (identical) "IDENTICAL" else "MISMATCH"}")
 }
 

@@ -1,5 +1,8 @@
 package com.footballmanager.simulation
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class MatchResult(
     val homeClubId: Long,
     val awayClubId: Long,
