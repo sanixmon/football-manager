@@ -1,5 +1,7 @@
 package com.footballmanager.graphics
 
+import com.footballmanager.model.Club
+import com.footballmanager.model.Player
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -37,6 +39,15 @@ class GraphicsPack(private val root: Path) {
         root.resolve("faces").resolve("$playerId.png").takeIf { playerId in faces }
 
     fun kitPath(clubId: Long, side: KitSide): Path? = kits[clubId]?.get(side)
+
+    /** Resolves a club's logo, preferring [Club.graphicsId] then falling back to its id. */
+    fun logoPath(club: Club): Path? = logoPath(club.graphicsId ?: club.id)
+
+    /** Resolves a player's face, preferring [Player.graphicsId] then falling back to its id. */
+    fun facePath(player: Player): Path? = facePath(player.graphicsId ?: player.id)
+
+    /** Resolves a club's kit, preferring [Club.graphicsId] then falling back to its id. */
+    fun kitPath(club: Club, side: KitSide): Path? = kitPath(club.graphicsId ?: club.id, side)
 
     private fun scanIds(dir: Path): Set<Long> {
         if (!Files.isDirectory(dir)) return emptySet()

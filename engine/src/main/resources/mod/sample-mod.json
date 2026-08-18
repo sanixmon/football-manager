@@ -8,10 +8,11 @@
     {
       "name": "Klub Alpha",
       "shortName": "ALP",
+      "graphicsId": 680,
       "formation": "4-3-3",
       "mentality": "Attacking",
       "players": [
-        { "name": "Budi Santoso", "position": "ST", "age": 26, "nationality": "ID", "attributes": { "FINISHING": 88, "PACE": 85, "COMPOSURE": 80 } },
+        { "name": "Budi Santoso", "position": "ST", "age": 26, "nationality": "ID", "graphicsId": 98012345, "attributes": { "FINISHING": 88, "PACE": 85, "COMPOSURE": 80 } },
         { "name": "Citra Wijaya", "position": "CM", "age": 24, "nationality": "ID", "attributes": { "PASSING": 82, "VISION": 79 } },
         { "name": "Dewa Pratama", "position": "GK", "age": 30, "nationality": "ID", "attributes": { "POSITIONING": 78, "AGILITY": 75 } }
       ]

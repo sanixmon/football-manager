@@ -40,4 +40,6 @@ data class Club(
     val squad: Squad = Squad(id),
     /** Default match tactics for this club, used to seed its [com.footballmanager.simulation.Team]. */
     val defaultTactics: Tactics? = null,
+    /** Optional external graphics id (e.g. a community logopack id). */
+    val graphicsId: Long? = null,
 )

@@ -78,6 +78,28 @@ class ModLoaderTest {
     }
 
     @Test
+    fun `graphics ids are carried through from the mod`() {
+        val modFile = ModFile(
+            name = "Gfx",
+            startDate = "2026-08-01",
+            league = ModLeague("L"),
+            clubs = listOf(
+                ModClub(
+                    name = "A",
+                    shortName = "A",
+                    graphicsId = 680,
+                    players = listOf(ModPlayer("P", "ST", graphicsId = 12345)),
+                ),
+            ),
+        )
+
+        val game = ModLoader.load(modFile)
+
+        assertEquals(680L, game.clubs.getValue(1L).graphicsId)
+        assertEquals(12345L, game.players.getValue(1L).graphicsId)
+    }
+
+    @Test
     fun `unknown enum strings fail fast with a clear message`() {
         val badPosition = ModFile(
             name = "Bad",

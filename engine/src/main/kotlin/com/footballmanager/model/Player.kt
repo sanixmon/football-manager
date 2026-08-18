@@ -32,6 +32,8 @@ data class Player(
     val contract: Contract,
     val fitness: Int = 100,
     val morale: Int = 50,
+    /** Optional external graphics id (e.g. a community facepack id). */
+    val graphicsId: Long? = null,
 ) {
     init {
         require(name.isNotBlank()) { "player name must not be blank" }

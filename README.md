@@ -68,6 +68,11 @@ this convention (`GraphicsPack`):
 <root>/faces/<playerId>.png
 ```
 
+A mod can give a club/player an optional `"graphicsId"` so its assets are keyed
+by an external id (e.g. a community pack's id) instead of the auto-assigned
+internal id. `GraphicsPack.logoPath(club)` / `facePath(player)` / `kitPath(club, side)`
+prefer `graphicsId` and fall back to the internal id.
+
 Note: this project does **not** read Sports Interactive's proprietary `.fmf`
 database files, and does not bundle real player data.
 

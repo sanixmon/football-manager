@@ -60,6 +60,7 @@ object ModLoader {
                 leagueId = leagueId,
                 squad = Squad(clubId, playerIds),
                 defaultTactics = Tactics(parseFormation(modClub.formation), parseMentality(modClub.mentality)),
+                graphicsId = modClub.graphicsId,
             )
         }
 
@@ -83,6 +84,7 @@ object ModLoader {
             modPlayer.attributes.entries.associate { (key, value) -> parseAttribute(key) to value },
         ),
         contract = Contract(expiresOn = LocalDate.of(2030, 6, 30)),
+        graphicsId = modPlayer.graphicsId,
     )
 
     private fun parsePosition(input: String): Position =
