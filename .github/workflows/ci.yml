@@ -35,3 +35,6 @@ jobs:
 
       - name: Build and test
         run: gradle build
+
+      - name: Run demo (seed + season end-to-end)
+        run: gradle run -q

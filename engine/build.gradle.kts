@@ -1,9 +1,14 @@
 plugins {
     kotlin("jvm")
+    application
 }
 
 group = "com.footballmanager"
 version = "0.1.0"
+
+application {
+    mainClass.set("com.footballmanager.MainKt")
+}
 
 kotlin {
     jvmToolchain(17)
