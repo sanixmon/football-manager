@@ -7,10 +7,6 @@ import com.footballmanager.model.PositionGroup
 import kotlin.math.roundToInt
 import kotlinx.serialization.Serializable
 
-/**
- * A team's match-relevant strength on the same 1..100 scale as attributes,
- * plus optional [tactics] that modify attack/defense for a match.
- */
 @Serializable
 data class Team(
     val clubId: Long,
@@ -23,39 +19,44 @@ data class Team(
         require(defense in MIN_ATTRIBUTE..MAX_ATTRIBUTE) { "defense out of range: $defense" }
     }
 
-    /** Attack rating after applying the formation and mentality modifiers. */
     fun effectiveAttack(): Int =
         (attack * tactics.attackModifier).roundToInt().coerceIn(MIN_ATTRIBUTE, MAX_ATTRIBUTE)
 
-    /** Defense rating after applying the formation and mentality modifiers. */
     fun effectiveDefense(): Int =
         (defense * tactics.defenseModifier).roundToInt().coerceIn(MIN_ATTRIBUTE, MAX_ATTRIBUTE)
 
     companion object {
         private const val MID_RATING = 50
 
-        /**
-         * Derives a [Team] from a squad by averaging the best overall of each
-         * positional group. Attackers drive attack, defenders + keeper drive
-         * defense, and midfielders contribute to both.
-         */
-        fun fromSquad(clubId: Long, players: List<Player>, tactics: Tactics = Tactics()): Team {
-            fun bestOf(group: PositionGroup): List<Int> =
-                players.filter { it.bestPosition().group == group }.map { it.bestOverall() }
+        fun fromLineup(clubId: Long, starters: List<Player>, tactics: Tactics = Tactics()): Team {
+            require(starters.size == 11) { "Starting XI must have exactly 11 players (got ${starters.size})" }
+            val slots = tactics.formation.slots
+            val assigned = starters.zip(slots)
+
+            fun groupRatings(group: PositionGroup): List<Int> =
+                assigned.filter { (_, slot) -> slot.group == group }
+                    .map { (player, slot) -> player.effectiveOverall(slot) }
 
             fun average(values: List<Int>): Double =
                 if (values.isEmpty()) MID_RATING.toDouble() else values.average()
 
-            val attack = (0.7 * average(bestOf(PositionGroup.ATTACKER)) +
-                0.3 * average(bestOf(PositionGroup.MIDFIELDER)))
+            val attack = (0.7 * average(groupRatings(PositionGroup.ATTACKER)) +
+                0.3 * average(groupRatings(PositionGroup.MIDFIELDER)))
                 .roundToInt().coerceIn(MIN_ATTRIBUTE, MAX_ATTRIBUTE)
 
-            val defense = (0.6 * average(bestOf(PositionGroup.DEFENDER)) +
-                0.2 * average(bestOf(PositionGroup.GOALKEEPER)) +
-                0.2 * average(bestOf(PositionGroup.MIDFIELDER)))
+            val defense = (0.6 * average(groupRatings(PositionGroup.DEFENDER)) +
+                0.2 * average(groupRatings(PositionGroup.GOALKEEPER)) +
+                0.2 * average(groupRatings(PositionGroup.MIDFIELDER)))
                 .roundToInt().coerceIn(MIN_ATTRIBUTE, MAX_ATTRIBUTE)
 
             return Team(clubId, attack, defense, tactics)
+        }
+
+        fun fromSquad(clubId: Long, players: List<Player>, tactics: Tactics = Tactics()): Team {
+            val lineup = Lineup.autoSelect(players, tactics)
+            val playerMap = players.associateBy { it.id }
+            val starters = lineup.starters.map { playerMap.getValue(it) }
+            return fromLineup(clubId, starters, tactics)
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.footballmanager.simulation
 
+import com.footballmanager.model.Attribute
 import com.footballmanager.model.Contract
 import com.footballmanager.model.Player
 import com.footballmanager.model.PlayerAttributes
@@ -128,22 +129,40 @@ class MatchEngineTest {
     }
 
     @Test
-    fun `an empty squad falls back to a mid rating`() {
-        val team = Team.fromSquad(clubId = 1, players = emptyList())
-        assertEquals(50, team.attack)
-        assertEquals(50, team.defense)
+    fun `a squad with fewer than 11 players throws`() {
+        assertFailsWith<IllegalArgumentException> {
+            Team.fromSquad(clubId = 1, players = emptyList())
+        }
     }
 
     @Test
     fun `a striker-heavy squad attacks more than it defends`() {
-        val squad = listOf(player(1, listOf(Position.ST), PlayerAttributes.uniform(80)))
+        val stAttributes = PlayerAttributes(
+            mapOf(
+                Attribute.FINISHING to 85,
+                Attribute.PACE to 85,
+                Attribute.ACCELERATION to 85,
+                Attribute.POSITIONING to 75,
+                Attribute.TACKLING to 20,
+            ),
+        )
+        val squad = (1L..11L).map { player(it, listOf(Position.ST), stAttributes) }
         val team = Team.fromSquad(clubId = 1, players = squad)
         assertTrue(team.attack > team.defense)
     }
 
     @Test
     fun `a defender-heavy squad defends more than it attacks`() {
-        val squad = listOf(player(1, listOf(Position.CB), PlayerAttributes.uniform(80)))
+        val defAttributes = PlayerAttributes(
+            mapOf(
+                Attribute.TACKLING to 85,
+                Attribute.POSITIONING to 85,
+                Attribute.STRENGTH to 85,
+                Attribute.FINISHING to 20,
+                Attribute.DRIBBLING to 20,
+            ),
+        )
+        val squad = (1L..11L).map { player(it, listOf(Position.CB), defAttributes) }
         val team = Team.fromSquad(clubId = 1, players = squad)
         assertTrue(team.defense > team.attack)
     }
