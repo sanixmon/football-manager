@@ -75,20 +75,23 @@ CI output is the only executable proof of the entry point).
   facilities, squad, `defaultTactics`, `graphicsId`), `Competition` (sealed: `League`/`Cup`),
   `Calendar` (sorted fixtures). Attributes are 1–100; **overall rating is computed
   per position** from `PositionWeights` (a striker rates higher at ST than CB).
+  **`Player.effectiveOverall(position)`** accounts for real-time `fitness` and `morale`.
 - **Match engine** (`MatchEngine`): 90 min = 18 ticks × 5 min. Possession → chance →
   shot → goal/save/miss. Home advantage ×1.05. `RandomSource` is injectable so
   results are reproducible (prod `KotlinRandomSource`, tests use `FakeRandomSource`).
-- **Tactics**: `Formation` (4-4-2 balanced, 4-3-3 attack-bias, 5-3-2 defense-bias) ×
-  `Mentality` (Defensive/Balanced/Attacking), multiplicative, applied in
-  `Team.effectiveAttack()/effectiveDefense()` before simulation.
+- **Tactics & Lineup Selection**: `Formation` (4-4-2, 4-3-3, 5-3-2) defines 11 positional slots
+  (`Formation.slots`). `Lineup` specifies starting 11 players and substitutes; `Lineup.autoSelect`
+  assigns optimal squad members to slots. `Team.fromLineup` derives team strength from starting XI
+  ratings and condition.
 - **Season simulation** (`SeasonSimulator`): double round-robin (leg 2 = leg 1 with
   home/away swapped), standings W=3/D=1/L=0, sorted Pts → GD → GF, champion.
 - **Incremental play** (`SeasonRunner` + `SeasonState`): advance one matchday at a
-  time, `setTactics(clubId, tactics)` before each match, `SeasonState` is serializable
-  so a season can be saved/resumed mid-season.
+  time, `setTactics(clubId, tactics)` and `setLineup(clubId, lineup)` before each match.
+  Simulates matchdays with dynamic starting lineups; starters deplete stamina (-12),
+  benched players recover (+18), and match outcomes update squad morale.
 - **Seed data**: 10 fictional Indonesian clubs × 18 players, deterministic (`Random` seed).
-- **Save/load**: whole `Game` (including `lastSeason` and `currentSeason`) round-trips
-  to/from pretty-printed JSON. Custom serializers exist for `java.time.LocalDate`,
+- **Save/load**: whole `Game` (including `lastSeason` and `currentSeason` with updated `players` and `lineups`)
+  round-trips to/from pretty-printed JSON. Custom serializers exist for `java.time.LocalDate`,
   `PlayerAttributes` (a map), and `Calendar` (a list).
 - **Modding**: `ModLoader` turns an author-friendly JSON file (clubs → players, string
   enums like `"ST"`, `"FINISHING"`, `"4-3-3"`) into a `Game`. Optional `graphicsId`
@@ -110,22 +113,27 @@ CI output is the only executable proof of the entry point).
 - **One-shot vs incremental**: `SeasonSimulator` simulates a whole season at once;
   `SeasonRunner` plays matchday-by-matchday and is proven equivalent (same seed →
   same standings) by `SeasonRunnerTest`.
+- **Condition & Lineups**: Starting 11 players drive team match power; squad rotation is rewarded.
 
 ---
 
 ## 7. Testing
 
-**74 tests, all green.** Highlights:
+**93 tests, all green.** Highlights:
 
 - `MatchEngineTest` / `MatchEngineStatisticsTest` — 18 ticks, score bounds, deterministic
   RNG, 10k-match statistical tests (stronger team wins more, home advantage, draws possible).
-- `TacticsTest` / `TacticsStatisticsTest` — attacking concedes & scores more; formation bias.
+- `TacticsTest` / `TacticsStatisticsTest` — attacking concedes & scores more; formation bias; 11-slot validation.
+- `PlayerConditionTest` — effective rating calculation under varying fitness/morale.
+- `LineupTest` — lineup validation and optimal slot auto-selection.
+- `TeamLineupTest` — team power derived from starting XI and condition drops.
+- `SeasonRunnerConditionTest` — matchday stamina drain, recovery, and morale progression.
 - `FixtureGeneratorTest` — double round-robin: 10 teams → 90 fixtures, every pair meets
   twice (once per venue), no team plays twice per round.
 - `SeasonSimulatorTest` / `SeasonSimulatorStatisticsTest` — points, GD, sorting, champion.
 - `SeasonRunnerTest` — matchday-by-matchday matches one-shot season; tactics apply.
 - `GameSerializationTest` — save/load round-trips (small game, full seed world, season
-  result, mid-season resume).
+  result, mid-season resume with player condition).
 - `ModLoaderTest` — JSON mod → Game; `graphicsId` passthrough; bad enum fails fast.
 - `GraphicsPackTest` — logo/kit/face resolution, graphicsId fallback, missing files.
 
@@ -144,12 +152,10 @@ gradle run -q      # run Main.kt demo (prints standings + save/load + mod demo)
 
 1. **Android/Compose UI** — render logos/kits/faces via `GraphicsPack`, interactive
    squad / tactics / standings screens. Engine is ready; UI is the missing face.
-2. **Pre-match team selection & player condition** — `Player.fitness`/`morale` exist but
-   are unused by the engine.
-3. **Season-end loop** — promote `currentSeason` → `lastSeason`, reset for next season.
-4. **Transfers / contracts / finance / scouting** (Phase 4 of the original plan).
-5. **World simulation** — AI managers, youth academy, injuries, retirement, news.
-6. **Cup tournament (knockout)** — `Cup` type exists but is unused.
+2. **Season-end loop** — promote `currentSeason` → `lastSeason`, reset for next season.
+3. **Transfers / contracts / finance / scouting** (Phase 4 of the original plan).
+4. **World simulation** — AI managers, youth academy, injuries, retirement, news.
+5. **Cup tournament (knockout)** — `Cup` type exists but is unused.
 
 ---
 
@@ -169,6 +175,14 @@ gradle run -q      # run Main.kt demo (prints standings + save/load + mod demo)
 ## 11. Recent history (git log, newest first)
 
 ```
+9684939 fix: add value equality to Calendar and verify full game round-trip serialization
+1d286e0 feat: persist player condition and showcase lineup rotation in demo
+199db45 feat: manage lineup and player condition updates across matchdays
+d6db96d feat: derive team power from lineup starting XI and condition
+8dbe142 feat: add Lineup model and auto-selection logic
+bd2c11c feat: add formation positional slots and player effectiveOverall
+1ccd127 docs: add implementation plan for pre-match selection and player condition
+9ab6acc docs: add design spec for pre-match selection and player condition
 cd8f8e7 Map graphics to external ids via Club/Player.graphicsId
 f85f973 Add mod support: JSON custom databases and graphics packs
 9c2e002 Add incremental matchday-by-matchday season runner
