@@ -38,3 +38,13 @@ jobs:
 
       - name: Run demo (seed + season end-to-end)
         run: gradle :engine:run -q
+
+      - name: Build Android Debug APK
+        run: gradle :app:assembleDebug
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: football-manager-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
