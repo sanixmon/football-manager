@@ -9,12 +9,12 @@ engine is fully decoupled from any UI toolkit — there is no Android/Compose ye
 
 ## 1. Status in one paragraph
 
-The headless engine is complete and green in CI: domain model, tick-based match
-engine, tactics, double round-robin season simulation, an incremental
-matchday-by-matchday runner, deterministic seed data, JSON save/load, custom
-database "mods", and a graphics-pack resolver. A human can already "play" a
-season from the CLI (`Main.kt`): pick a club, rotate tactics each matchday, and
-save/resume mid-season. The next big milestone is a UI (Android/Compose).
+The headless engine and the Android Jetpack Compose UI are complete and green in CI:
+domain model, tick-based match engine, tactics, double round-robin season simulation,
+an incremental matchday-by-matchday runner, deterministic seed data, JSON save/load,
+custom database "mods", graphics-pack resolver, and an interactive 4-tab Android
+application (`:app` module with Jetpack Compose & Material 3: Home Dashboard, Tactics &
+Interactive Pitch Visualizer, Standings Table, and Live Matchday Simulation).
 
 ---
 
@@ -22,33 +22,43 @@ save/resume mid-season. The next big milestone is a UI (Android/Compose).
 
 | Concern | Choice |
 |---|---|
-| Language | Kotlin (JVM) |
+| Language | Kotlin (JVM & Android) |
 | Kotlin version | **2.4.10** |
+| Android Gradle Plugin | **8.7.3** (compileSdk 35, minSdk 26) |
+| UI Framework | **Jetpack Compose** (BOM `2024.10.01`, Material 3) |
+| Navigation | `androidx.navigation:navigation-compose:2.8.3` |
 | Gradle | **8.14.4** (no wrapper committed — see §4) |
 | JDK | **17** (Temurin) |
 | Build tool | Gradle Kotlin DSL |
 | Serialization | `kotlinx-serialization-json` **1.11.0** |
-| Tests | JUnit 5 via `kotlin("test-junit5")` (no extra deps) |
-| Runtime deps | **none** (JSON lib is the only non-test dependency) |
+| Tests | JUnit 5 via `kotlin("test-junit5")` |
 | CI | GitHub Actions (`.github/workflows/ci.yml`) |
 
 ---
 
 ## 3. Module layout
 
-Single Gradle module `:engine` (pure Kotlin JVM). Package root
-`com.footballmanager`:
+Multi-module Gradle project:
+- **`:engine`**: Pure Kotlin JVM simulation engine (no Android deps).
+- **`:app`**: Android Application (Jetpack Compose, Material 3, ViewModel, Navigation).
 
 ```
-model/          # domain: Player, Club, Squad, Competition (League/Cup), Calendar, Game
-simulation/     # MatchEngine, Team, Tactics, MatchResult/Event/Stats, RandomSource
-simulation/season/  # Fixture, FixtureGenerator, Standings, SeasonSimulator, SeasonRunner, SeasonState, SeasonResult
-serialization/  # Game.saveToFile/loadFromFile + custom serializers (LocalDate, PlayerAttributes, Calendar)
-mod/            # ModFile schema + ModLoader (JSON -> Game)
-graphics/       # GraphicsPack (logo/kit/face resolver by id)
-seed/           # SeedData (10 clubs x 18 players, deterministic)
-Main.kt         # CLI entry point (playable demo + mod demo)
-resources/mod/sample-mod.json   # example custom database mod
+football-manager/
+├── engine/src/main/kotlin/com/footballmanager/
+│   ├── model/          # domain: Player, Club, Squad, Competition, Calendar, Game
+│   ├── simulation/     # MatchEngine, Team, Tactics, Lineup, MatchResult/Event
+│   ├── simulation/season/  # SeasonSimulator, SeasonRunner, SeasonState, SeasonResult
+│   ├── serialization/  # Game.saveToFile/loadFromFile + custom serializers
+│   ├── mod/            # ModFile schema + ModLoader
+│   ├── graphics/       # GraphicsPack (logo/kit/face resolver by id)
+│   └── seed/           # SeedData (10 clubs x 18 players, deterministic)
+└── app/src/main/kotlin/com/footballmanager/app/
+    ├── MainActivity.kt
+    ├── ui/theme/       # Material 3 Dark Stadium theme & typography tokens
+    ├── ui/components/  # PitchCanvas, PlayerCardNode, StatGauge, FormBadge
+    ├── ui/navigation/  # 4-tab AppNavigation
+    ├── ui/screens/     # HomeScreen, TacticsScreen, StandingsScreen, MatchdayScreen
+    └── ui/viewmodel/   # GameViewModel & GameUiState
 ```
 
 ---
@@ -61,10 +71,7 @@ Actions. The repo does not commit `gradlew`; CI uses
 `gradle` directly (not `./gradlew`).
 
 CI steps: `checkout` → `setup-java` (Temurin 17) → `setup-gradle` (caches Gradle
-+ deps, `cache-provider: basic`) → `gradle build` → `gradle run -q` (the demo).
-
-To run the demo's output, read the "Run demo" step log in the Actions tab (the
-CI output is the only executable proof of the entry point).
++ deps, `cache-provider: basic`) → `gradle build` → `gradle :engine:run -q` (the demo).
 
 ---
 
@@ -89,6 +96,12 @@ CI output is the only executable proof of the entry point).
   time, `setTactics(clubId, tactics)` and `setLineup(clubId, lineup)` before each match.
   Simulates matchdays with dynamic starting lineups; starters deplete stamina (-12),
   benched players recover (+18), and match outcomes update squad morale.
+- **Android Jetpack Compose UI (`:app`)**:
+  - **Home Dashboard**: Club overview, next fixture card, date, round counter, squad fitness/morale gauges.
+  - **Tactics & Interactive Pitch**: Visual turf grass canvas rendering 11 starter cards according to formation slots, live attack/defense ratings, bench tray, and tap-to-swap player substitution.
+  - **Standings Table**: Full league table with human club highlighted and tabular alignment.
+  - **Matchday Live Sim**: Match simulator with minute ticker, Material 3 vector incident icons (goals, saves, misses), and scoreline summaries.
+  - **GameViewModel**: Reactive `StateFlow<GameUiState>` managing engine state and persistent saves.
 - **Seed data**: 10 fictional Indonesian clubs × 18 players, deterministic (`Random` seed).
 - **Save/load**: whole `Game` (including `lastSeason` and `currentSeason` with updated `players` and `lineups`)
   round-trips to/from pretty-printed JSON. Custom serializers exist for `java.time.LocalDate`,
@@ -98,7 +111,7 @@ CI output is the only executable proof of the entry point).
   lets assets map to external ids.
 - **Graphics packs**: `GraphicsPack` resolves `<root>/logos/<id>.png`,
   `<root>/kits/<id>/{home,away,third}.png`, `<root>/faces/<id>.png` by club/player id,
-  preferring `graphicsId` then falling back to internal id. (No image rendering yet.)
+  preferring `graphicsId` then falling back to internal id.
 
 ---
 
@@ -110,6 +123,7 @@ CI output is the only executable proof of the entry point).
 - **RNG injected, never global** — deterministic and reproducible tests.
 - **Immutable domain** — `StandingEntry.record()` and `SeasonState.copy(...)` accumulate
   state without mutation.
+- **Strictly Vector Icons (No emojis)** — Material Icons and vector paths for clean sports dashboard styling.
 - **One-shot vs incremental**: `SeasonSimulator` simulates a whole season at once;
   `SeasonRunner` plays matchday-by-matchday and is proven equivalent (same seed →
   same standings) by `SeasonRunnerTest`.
@@ -119,8 +133,9 @@ CI output is the only executable proof of the entry point).
 
 ## 7. Testing
 
-**93 tests, all green.** Highlights:
+**97 tests, all green.** Highlights:
 
+- `GameViewModelTest` — tactics updates, lineup swap mutations, and matchday condition progression in Android `:app`.
 - `MatchEngineTest` / `MatchEngineStatisticsTest` — 18 ticks, score bounds, deterministic
   RNG, 10k-match statistical tests (stronger team wins more, home advantage, draws possible).
 - `TacticsTest` / `TacticsStatisticsTest` — attacking concedes & scores more; formation bias; 11-slot validation.
@@ -142,20 +157,18 @@ CI output is the only executable proof of the entry point).
 ## 8. Commands (CI is authoritative; local optional)
 
 ```bash
-gradle build       # compile + run all tests
-gradle run -q      # run Main.kt demo (prints standings + save/load + mod demo)
+gradle build              # compile + run all tests across :engine and :app
+gradle :engine:run -q     # run Main.kt demo (prints standings + save/load + mod demo)
 ```
 
 ---
 
 ## 9. Roadmap / next steps
 
-1. **Android/Compose UI** — render logos/kits/faces via `GraphicsPack`, interactive
-   squad / tactics / standings screens. Engine is ready; UI is the missing face.
-2. **Season-end loop** — promote `currentSeason` → `lastSeason`, reset for next season.
-3. **Transfers / contracts / finance / scouting** (Phase 4 of the original plan).
-4. **World simulation** — AI managers, youth academy, injuries, retirement, news.
-5. **Cup tournament (knockout)** — `Cup` type exists but is unused.
+1. **Season-end loop** — promote `currentSeason` → `lastSeason`, reset for next season.
+2. **Transfers / contracts / finance / scouting** (Phase 4 of the original plan).
+3. **World simulation** — AI managers, youth academy, injuries, retirement, news.
+4. **Cup tournament (knockout)** — `Cup` type exists but is unused.
 
 ---
 
@@ -175,24 +188,15 @@ gradle run -q      # run Main.kt demo (prints standings + save/load + mod demo)
 ## 11. Recent history (git log, newest first)
 
 ```
-9684939 fix: add value equality to Calendar and verify full game round-trip serialization
-1d286e0 feat: persist player condition and showcase lineup rotation in demo
-199db45 feat: manage lineup and player condition updates across matchdays
-d6db96d feat: derive team power from lineup starting XI and condition
-8dbe142 feat: add Lineup model and auto-selection logic
-bd2c11c feat: add formation positional slots and player effectiveOverall
-1ccd127 docs: add implementation plan for pre-match selection and player condition
-9ab6acc docs: add design spec for pre-match selection and player condition
-cd8f8e7 Map graphics to external ids via Club/Player.graphicsId
-f85f973 Add mod support: JSON custom databases and graphics packs
-9c2e002 Add incremental matchday-by-matchday season runner
-3bc7723 Persist season results on the Game aggregate
-4a2883b Add JSON save/load via kotlinx.serialization
-2938460 Switch to double round-robin fixtures
-1418de6 Add tactics (formation + mentality) as team modifiers
-7a666d3 Wire seed data end-to-end and add demo entry point
-542c838 Add season simulation layer
-eb139b2 Add core:simulation match engine v0.1
-1b9cfe4 Add core:model domain types for the simulation engine
-f2bd8e4 Scaffold pure-Kotlin engine module with GitHub Actions CI
+3fa9888 fix: extract PitchRow as top-level @Composable in PitchCanvas
+76a67c1 chore: enable android.useAndroidX in gradle.properties
+9b820e5 fix: use kotlin jvmToolchain in app module
+f36d747 ci: update multi-module run command in CI workflow
+c52f44c feat: implement 4-tab manager UI suite with Material 3 vector icons
+cc3a984 feat: implement GameViewModel and state management with unit tests
+c8771e0 feat: implement tactical pitch visualizer and player card node
+dcf8956 feat: implement Material 3 design tokens and shared UI components
+be1f94e chore: scaffold Android app module with Compose and Material 3
+a3a7c30 docs: add implementation plan for Android Jetpack Compose UI
+82de2f3 docs: add design spec for Android Jetpack Compose UI
 ```
