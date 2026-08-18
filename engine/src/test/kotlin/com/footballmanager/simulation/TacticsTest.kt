@@ -1,5 +1,6 @@
 package com.footballmanager.simulation
 
+import com.footballmanager.model.Position
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -41,5 +42,43 @@ class TacticsTest {
         val team = Team(1, 99, 1, Tactics(Formation.FOUR_THREE_THREE, Mentality.ATTACKING))
         assertEquals(100, team.effectiveAttack())
         assertEquals(1, team.effectiveDefense())
+    }
+
+    @Test
+    fun `each formation has exactly 11 positional slots`() {
+        for (formation in Formation.entries) {
+            assertEquals(11, formation.slots.size, "formation $formation must have 11 slots")
+            assertEquals(Position.GK, formation.slots.first(), "first slot must be GK")
+        }
+
+        assertEquals(
+            listOf(
+                Position.GK,
+                Position.LB, Position.CB, Position.CB, Position.RB,
+                Position.LM, Position.CM, Position.CM, Position.RM,
+                Position.ST, Position.ST,
+            ),
+            Formation.FOUR_FOUR_TWO.slots,
+        )
+
+        assertEquals(
+            listOf(
+                Position.GK,
+                Position.LB, Position.CB, Position.CB, Position.RB,
+                Position.CDM, Position.CM, Position.CAM,
+                Position.LW, Position.ST, Position.RW,
+            ),
+            Formation.FOUR_THREE_THREE.slots,
+        )
+
+        assertEquals(
+            listOf(
+                Position.GK,
+                Position.LWB, Position.CB, Position.CB, Position.CB, Position.RWB,
+                Position.CM, Position.CM, Position.CM,
+                Position.ST, Position.ST,
+            ),
+            Formation.FIVE_THREE_TWO.slots,
+        )
     }
 }
