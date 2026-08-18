@@ -2,6 +2,7 @@ package com.footballmanager.model
 
 import com.footballmanager.serialization.LocalDateSerializer
 import com.footballmanager.simulation.season.SeasonResult
+import com.footballmanager.simulation.season.SeasonState
 import java.time.LocalDate
 import kotlinx.serialization.Serializable
 
@@ -21,6 +22,8 @@ data class Game(
     val calendar: Calendar = Calendar(),
     /** The most recently completed season, if one has been played. */
     val lastSeason: SeasonResult? = null,
+    /** The season currently in progress (resumable), if any. */
+    val currentSeason: SeasonState? = null,
 ) {
     fun club(id: Long): Club = clubs.getValue(id)
 

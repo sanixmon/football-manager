@@ -17,12 +17,14 @@ import com.footballmanager.model.SquadStatus
 import com.footballmanager.seed.SeedData
 import com.footballmanager.simulation.KotlinRandomSource
 import com.footballmanager.simulation.MatchEngine
+import com.footballmanager.simulation.season.SeasonRunner
 import com.footballmanager.simulation.season.SeasonSimulator
 import java.nio.file.Files
 import java.time.LocalDate
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class GameSerializationTest {
 
@@ -92,6 +94,35 @@ class GameSerializationTest {
             Triple(it.team.clubId, it.points, it.goalDifference)
         }
         assertEquals(before, after)
+    }
+
+    @Test
+    fun `mid-season save and resume preserves progress`() {
+        val game = SeedData.game()
+        val league = game.competitions.getValue(SeedData.LEAGUE_ID) as League
+        val teams = SeedData.teams(game)
+
+        val runner = SeasonRunner(MatchEngine(KotlinRandomSource(Random(42))))
+        var state = runner.start(league, teams, SeedData.START_DATE, humanClubId = 1L)
+        repeat(6) { state = runner.playNextMatchday(state) }
+
+        val saved = game.copy(currentSeason = state)
+        val path = tempPath("midseason.json")
+        saved.saveToFile(path)
+        val loaded = Game.loadFromFile(path)
+        val resumed = requireNotNull(loaded.currentSeason)
+
+        // full structural equality of the in-progress snapshot
+        assertEquals(state, resumed)
+        assertEquals(state.results, resumed.results)
+        assertEquals(state.standings, resumed.standings)
+
+        // continue to completion from the loaded snapshot
+        var finished = resumed
+        while (!finished.isFinished) finished = runner.playNextMatchday(finished)
+        assertTrue(finished.isFinished)
+        assertEquals(teams.size, finished.standings.entries.size)
+        assertEquals(2 * (teams.size - 1), finished.standings.entries.first().played)
     }
 
     private fun tempPath(name: String): String =

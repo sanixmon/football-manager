@@ -5,9 +5,12 @@ import com.footballmanager.model.League
 import com.footballmanager.seed.SeedData
 import com.footballmanager.serialization.loadFromFile
 import com.footballmanager.serialization.saveToFile
+import com.footballmanager.simulation.Formation
 import com.footballmanager.simulation.KotlinRandomSource
 import com.footballmanager.simulation.MatchEngine
-import com.footballmanager.simulation.season.SeasonSimulator
+import com.footballmanager.simulation.Mentality
+import com.footballmanager.simulation.Tactics
+import com.footballmanager.simulation.season.SeasonRunner
 import com.footballmanager.simulation.season.StandingEntry
 import java.io.File
 import kotlin.random.Random
@@ -17,49 +20,79 @@ fun main() {
     val league = game.competitions.getValue(SeedData.LEAGUE_ID) as League
     val teams = SeedData.teams(game)
 
-    val result = SeasonSimulator(MatchEngine(KotlinRandomSource(Random(42))))
-        .simulate(league, teams, SeedData.START_DATE)
+    val humanClubId = 1L
+    val humanClub = game.club(humanClubId)
+    val runner = SeasonRunner(MatchEngine(KotlinRandomSource(Random(42))))
 
-    println("League : ${league.name}")
-    println("Clubs  : ${teams.size}")
-    println("Rounds : ${result.fixtures.maxOf { it.round }} (${result.fixtures.size} fixtures)")
+    println("You manage : ${humanClub.name}")
+    println("League     : ${league.name} (${teams.size} clubs)")
     println()
-    println("--- Standings before save ---")
-    printStandings(result.standings.entries, game)
-    println()
-    val champion = game.club(result.champion.team.clubId)
-    println("Champion: ${champion.name} — ${result.champion.points} pts (GD ${result.champion.goalDifference})")
 
-    // ---- attach the completed season to the game, then save ----------------
-    val savedGame = game.copy(lastSeason = result)
-    val savePath = "demo-save.json"
-    savedGame.saveToFile(savePath)
+    // Rotate through a few tactical plans before each matchday.
+    val plans = listOf(
+        Tactics(Formation.FOUR_THREE_THREE, Mentality.ATTACKING),
+        Tactics(Formation.FOUR_FOUR_TWO, Mentality.BALANCED),
+        Tactics(Formation.FIVE_THREE_TWO, Mentality.DEFENSIVE),
+    )
 
-    // ---- load from disk and re-print standings from the LOADED object --------
-    val loaded = Game.loadFromFile(savePath)
-    val loadedSeason = loaded.lastSeason ?: error("loaded save has no season result")
+    var state = runner.start(league, teams, SeedData.START_DATE, humanClubId)
+    val totalMatchdays = state.fixtures.maxOf { it.round }
+    val saveAfterMatchday = 6
+    var resumed = false
+
+    while (!state.isFinished) {
+        val matchday = state.nextMatchday ?: break
+        val plan = plans[(matchday - 1) % plans.size]
+        state = state.setTactics(humanClubId, plan)
+        state = runner.playNextMatchday(state)
+
+        val mine = state.results.lastOrNull { it.homeClubId == humanClubId || it.awayClubId == humanClubId }
+        if (mine != null) {
+            val opponentId = if (mine.homeClubId == humanClubId) mine.awayClubId else mine.homeClubId
+            val venue = if (mine.homeClubId == humanClubId) "vs" else "@"
+            val myGoals = if (mine.homeClubId == humanClubId) mine.homeScore else mine.awayScore
+            val oppGoals = if (mine.homeClubId == humanClubId) mine.awayScore else mine.homeScore
+            println(
+                "MD %2d  %-5s  %s %-18s %d-%d".format(
+                    matchday, plan.formation.label, venue, game.club(opponentId).name, myGoals, oppGoals,
+                ),
+            )
+        }
+
+        if (!resumed && matchday == saveAfterMatchday) {
+            val savePath = "demo-save.json"
+            game.copy(currentSeason = state).saveToFile(savePath)
+            val loadedState = Game.loadFromFile(savePath).currentSeason
+                ?: error("save has no current season")
+            println("--- saved after MD $matchday; round-trip ${if (loadedState == state) "IDENTICAL" else "MISMATCH"} ---")
+            state = loadedState
+            resumed = true
+        }
+    }
+
+    // Final save with the completed season attached.
+    game.copy(currentSeason = state).saveToFile("demo-save.json")
 
     println()
-    println("Save file   : $savePath (${File(savePath).length()} bytes)")
-    println("Load OK     : clubs=${loaded.clubs.size}, players=${loaded.players.size}, competitions=${loaded.competitions.size}, season=yes")
+    println("Final table after $totalMatchdays matchdays:")
+    printStandings(state.standings.entries, game)
     println()
-    println("--- Standings after load (printed from loaded object) ---")
-    printStandings(loadedSeason.standings.entries, loaded)
-    println()
-    val loadedChampion = loaded.club(loadedSeason.champion.team.clubId)
-    println("Loaded champion: ${loadedChampion.name} — ${loadedSeason.champion.points} pts (GD ${loadedSeason.champion.goalDifference})")
+    val champion = game.club(state.standings.champion.team.clubId)
+    println("Champion: ${champion.name} — ${state.standings.champion.points} pts (GD ${state.standings.champion.goalDifference})")
+    val humanRow = state.standings.entries.first { it.team.clubId == humanClubId }
+    val humanPosition = state.standings.entries.indexOfFirst { it.team.clubId == humanClubId } + 1
+    println("${humanClub.name} finished ${ordinal(humanPosition)} (${humanRow.points} pts)")
+    println("Save file : demo-save.json (${File("demo-save.json").length()} bytes)")
+}
 
-    // ---- round-trip verification --------------------------------------------
-    val identical = loaded.name == savedGame.name &&
-        loaded.currentDate == savedGame.currentDate &&
-        loaded.clubs == savedGame.clubs &&
-        loaded.players == savedGame.players &&
-        loaded.competitions == savedGame.competitions &&
-        loaded.calendar.fixtures() == savedGame.calendar.fixtures() &&
-        loaded.lastSeason == result
-
-    println()
-    println("Round-trip  : ${if (identical) "IDENTICAL" else "MISMATCH"}")
+private fun ordinal(n: Int): String = when (n % 100) {
+    11, 12, 13 -> "${n}th"
+    else -> when (n % 10) {
+        1 -> "${n}st"
+        2 -> "${n}nd"
+        3 -> "${n}rd"
+        else -> "${n}th"
+    }
 }
 
 private fun printStandings(entries: List<StandingEntry>, game: Game) {
