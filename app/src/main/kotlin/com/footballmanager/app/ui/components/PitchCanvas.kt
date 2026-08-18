@@ -74,27 +74,35 @@ fun PitchCanvas(
         val midfielders = startersWithSlots.filter { it.second.group == PositionGroup.MIDFIELDER }
         val attackers = startersWithSlots.filter { it.second.group == PositionGroup.ATTACKER }
 
-        fun renderRow(items: List<Pair<Player, Position>>, yFactor: Float) {
-            val count = items.size
-            items.forEachIndexed { index, (player, slot) ->
-                val xFraction = (index + 1f) / (count + 1f)
-                val xOffset = (widthPx * xFraction) - 36.dp
-                val yOffset = (heightPx * yFactor) - 20.dp
+        PitchRow(gk, 0.86f, widthPx, heightPx, selectedPlayerId, onPlayerClick)
+        PitchRow(defenders, 0.64f, widthPx, heightPx, selectedPlayerId, onPlayerClick)
+        PitchRow(midfielders, 0.38f, widthPx, heightPx, selectedPlayerId, onPlayerClick)
+        PitchRow(attackers, 0.12f, widthPx, heightPx, selectedPlayerId, onPlayerClick)
+    }
+}
 
-                Box(modifier = Modifier.offset(x = xOffset, y = yOffset)) {
-                    PlayerCardNode(
-                        player = player,
-                        slot = slot,
-                        isSelected = player.id == selectedPlayerId,
-                        onClick = { onPlayerClick(player.id) },
-                    )
-                }
-            }
+@Composable
+private fun PitchRow(
+    items: List<Pair<Player, Position>>,
+    yFactor: Float,
+    width: androidx.compose.ui.unit.Dp,
+    height: androidx.compose.ui.unit.Dp,
+    selectedPlayerId: Long?,
+    onPlayerClick: (Long) -> Unit,
+) {
+    val count = items.size
+    items.forEachIndexed { index, (player, slot) ->
+        val xFraction = (index + 1f) / (count + 1f)
+        val xOffset = (width * xFraction) - 36.dp
+        val yOffset = (height * yFactor) - 20.dp
+
+        Box(modifier = Modifier.offset(x = xOffset, y = yOffset)) {
+            PlayerCardNode(
+                player = player,
+                slot = slot,
+                isSelected = player.id == selectedPlayerId,
+                onClick = { onPlayerClick(player.id) },
+            )
         }
-
-        renderRow(gk, 0.86f)
-        renderRow(defenders, 0.64f)
-        renderRow(midfielders, 0.38f)
-        renderRow(attackers, 0.12f)
     }
 }
