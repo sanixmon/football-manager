@@ -28,14 +28,16 @@ fun main() {
 }
 
 private fun printStandings(entries: List<StandingEntry>, game: Game) {
-    println("%-3s %-20s %2s %2s %2s %2s %3s %3s %4s %4s".format(
-        "#", "Club", "P", "W", "D", "L", "GF", "GA", "GD", "Pts",
+    println("%-3s %-18s %-5s %-9s %2s %2s %2s %2s %3s %3s %4s %4s".format(
+        "#", "Club", "Form", "Mentality", "P", "W", "D", "L", "GF", "GA", "GD", "Pts",
     ))
     entries.forEachIndexed { index, entry ->
         val club = game.club(entry.team.clubId)
-        println("%-3d %-20s %2d %2d %2d %2d %3d %3d %4d %4d".format(
+        println("%-3d %-18s %-5s %-9s %2d %2d %2d %2d %3d %3d %4d %4d".format(
             index + 1,
             club.name,
+            entry.team.tactics.formation.label,
+            entry.team.tactics.mentality.label,
             entry.played,
             entry.won,
             entry.drawn,

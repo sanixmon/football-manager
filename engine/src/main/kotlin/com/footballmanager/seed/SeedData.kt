@@ -12,15 +12,19 @@ import com.footballmanager.model.PlayerAttributes
 import com.footballmanager.model.Position
 import com.footballmanager.model.PositionWeights
 import com.footballmanager.model.Squad
+import com.footballmanager.simulation.Formation
+import com.footballmanager.simulation.Mentality
+import com.footballmanager.simulation.Tactics
 import com.footballmanager.simulation.Team
 import java.time.LocalDate
 import kotlin.random.Random
 
 /**
- * Deterministic seed data: 10 clubs, each with an 18-player squad, and a single
- * league. Player attributes are generated per position from [PositionWeights]
- * (key attributes boosted, non-key lowered) and scaled by club quality, so
- * stronger clubs are clearly better without making the season fully predictable.
+ * Deterministic seed data: 10 clubs, each with an 18-player squad and distinct
+ * tactics, plus a single league. Player attributes are generated per position
+ * from [PositionWeights] (key attributes boosted, non-key lowered) and scaled by
+ * club quality, so stronger clubs are clearly better without making the season
+ * fully predictable.
  */
 object SeedData {
 
@@ -30,20 +34,31 @@ object SeedData {
 
     private const val SEED = 20260818L
 
-    private data class ClubSpec(val name: String, val shortName: String, val quality: Int)
+    private data class ClubSpec(
+        val name: String,
+        val shortName: String,
+        val quality: Int,
+        val formation: Formation,
+        val mentality: Mentality,
+    )
 
     private val clubSpecs = listOf(
-        ClubSpec("Jakarta Raya", "JKT", 82),
-        ClubSpec("Bandung Sakti", "BDG", 80),
-        ClubSpec("Surabaya Timur", "SBY", 78),
-        ClubSpec("Medan Utara", "MDN", 75),
-        ClubSpec("Makassar Selatan", "MKS", 71),
-        ClubSpec("Semarang City", "SMG", 68),
-        ClubSpec("Palembang United", "PLM", 64),
-        ClubSpec("Denpasar Bali", "DPS", 60),
-        ClubSpec("Balikpapan Oilers", "BPP", 56),
-        ClubSpec("Pontianak Rovers", "PTK", 52),
+        ClubSpec("Jakarta Raya", "JKT", 82, Formation.FOUR_THREE_THREE, Mentality.ATTACKING),
+        ClubSpec("Bandung Sakti", "BDG", 80, Formation.FOUR_FOUR_TWO, Mentality.BALANCED),
+        ClubSpec("Surabaya Timur", "SBY", 78, Formation.FOUR_THREE_THREE, Mentality.BALANCED),
+        ClubSpec("Medan Utara", "MDN", 75, Formation.FOUR_FOUR_TWO, Mentality.BALANCED),
+        ClubSpec("Makassar Selatan", "MKS", 71, Formation.FIVE_THREE_TWO, Mentality.DEFENSIVE),
+        ClubSpec("Semarang City", "SMG", 68, Formation.FOUR_FOUR_TWO, Mentality.ATTACKING),
+        ClubSpec("Palembang United", "PLM", 64, Formation.FIVE_THREE_TWO, Mentality.DEFENSIVE),
+        ClubSpec("Denpasar Bali", "DPS", 60, Formation.FOUR_FOUR_TWO, Mentality.BALANCED),
+        ClubSpec("Balikpapan Oilers", "BPP", 56, Formation.FIVE_THREE_TWO, Mentality.DEFENSIVE),
+        ClubSpec("Pontianak Rovers", "PTK", 52, Formation.FIVE_THREE_TWO, Mentality.DEFENSIVE),
     )
+
+    /** Club id (1-based index) → tactics, so each club plays a distinct style. */
+    private val clubTactics: Map<Long, Tactics> = clubSpecs.mapIndexed { index, spec ->
+        (index + 1).toLong() to Tactics(spec.formation, spec.mentality)
+    }.toMap()
 
     /** 18-player squad: 2 GK, 6 DF, 5 MF, 5 FW. */
     private val squadTemplate = listOf(
@@ -109,7 +124,7 @@ object SeedData {
     /** Converts every club's squad into a [Team] via [Team.fromSquad], ordered by club id. */
     fun teams(game: Game): List<Team> =
         game.clubs.values.sortedBy { it.id }.map { club ->
-            Team.fromSquad(club.id, game.squad(club.id))
+            Team.fromSquad(club.id, game.squad(club.id), clubTactics.getValue(club.id))
         }
 
     private fun player(

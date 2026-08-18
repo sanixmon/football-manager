@@ -21,10 +21,10 @@ class MatchEngine(
     fun simulate(home: Team, away: Team): MatchResult {
         require(home.clubId != away.clubId) { "home and away must be different clubs" }
 
-        val homeAttack = home.attack * HOME_ADVANTAGE
-        val homeDefense = home.defense * HOME_ADVANTAGE
-        val awayAttack = away.attack.toDouble()
-        val awayDefense = away.defense.toDouble()
+        val homeAttack = home.effectiveAttack() * HOME_ADVANTAGE
+        val homeDefense = home.effectiveDefense() * HOME_ADVANTAGE
+        val awayAttack = away.effectiveAttack().toDouble()
+        val awayDefense = away.effectiveDefense().toDouble()
 
         var homeGoals = 0
         var awayGoals = 0

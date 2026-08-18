@@ -8,11 +8,9 @@ package com.footballmanager
  *
  * Package layout:
  *   com.footballmanager.model               — Club, Player, Squad, League, Calendar, ...
- *   com.footballmanager.simulation          — MatchEngine, RandomSource, Team, ...
+ *   com.footballmanager.simulation          — MatchEngine, RandomSource, Team, Tactics, ...
  *   com.footballmanager.simulation.season   — SeasonSimulator, fixtures, standings
  *   com.footballmanager.seed                — seed data / demo world
- *
- * Planned (not implemented yet): tactics/formation modifiers.
  */
 object Engine {
     const val NAME: String = "football-manager"
