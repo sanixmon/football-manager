@@ -125,6 +125,34 @@ class GameSerializationTest {
         assertEquals(2 * (teams.size - 1), finished.standings.entries.first().played)
     }
 
+    @Test
+    fun `mid-season save preserves player fitness and lineups`() {
+        val game = SeedData.game()
+        val league = game.competitions.getValue(SeedData.LEAGUE_ID) as League
+        val teams = SeedData.teams(game)
+        val runner = SeasonRunner(MatchEngine(KotlinRandomSource(Random(42))))
+
+        var state = runner.start(
+            league = league,
+            teams = teams,
+            startDate = SeedData.START_DATE,
+            humanClubId = 1L,
+            clubs = game.clubs,
+            players = game.players,
+        )
+        state = runner.playNextMatchday(state)
+
+        val saved = game.copy(players = state.players, currentSeason = state)
+        val path = tempPath("condition-save.json")
+        saved.saveToFile(path)
+        val loaded = Game.loadFromFile(path)
+        val resumed = requireNotNull(loaded.currentSeason)
+
+        assertEquals(saved, loaded)
+        assertEquals(state.players, resumed.players)
+        assertEquals(state.players[1L]?.fitness, resumed.players[1L]?.fitness)
+    }
+
     private fun tempPath(name: String): String =
         Files.createTempDirectory("fm-save").resolve(name).toString()
 

@@ -36,7 +36,7 @@ fun main() {
         Tactics(Formation.FIVE_THREE_TWO, Mentality.DEFENSIVE),
     )
 
-    var state = runner.start(league, teams, SeedData.START_DATE, humanClubId)
+    var state = runner.start(league, teams, SeedData.START_DATE, humanClubId, clubs = game.clubs, players = game.players)
     val totalMatchdays = state.fixtures.maxOf { it.round }
     val saveAfterMatchday = 6
     var resumed = false
@@ -53,17 +53,21 @@ fun main() {
             val venue = if (mine.homeClubId == humanClubId) "vs" else "@"
             val myGoals = if (mine.homeClubId == humanClubId) mine.homeScore else mine.awayScore
             val oppGoals = if (mine.homeClubId == humanClubId) mine.awayScore else mine.homeScore
+            val humanSquad = state.clubs[humanClubId]?.squad?.playerIds?.mapNotNull { state.players[it] } ?: emptyList()
+            val avgFitness = if (humanSquad.isNotEmpty()) humanSquad.map { it.fitness }.average().toInt() else 100
+            val avgMorale = if (humanSquad.isNotEmpty()) humanSquad.map { it.morale }.average().toInt() else 50
             println(
-                "MD %2d  %-5s  %s %-18s %d-%d".format(
-                    matchday, plan.formation.label, venue, game.club(opponentId).name, myGoals, oppGoals,
+                "MD %2d  %-5s  %s %-18s %d-%d  (Squad Fit: %d%%, Mor: %d)".format(
+                    matchday, plan.formation.label, venue, game.club(opponentId).name, myGoals, oppGoals, avgFitness, avgMorale,
                 ),
             )
         }
 
         if (!resumed && matchday == saveAfterMatchday) {
             val savePath = "demo-save.json"
-            game.copy(currentSeason = state).saveToFile(savePath)
-            val loadedState = Game.loadFromFile(savePath).currentSeason
+            game.copy(players = state.players, currentSeason = state).saveToFile(savePath)
+            val loadedGame = Game.loadFromFile(savePath)
+            val loadedState = loadedGame.currentSeason
                 ?: error("save has no current season")
             println("--- saved after MD $matchday; round-trip ${if (loadedState == state) "IDENTICAL" else "MISMATCH"} ---")
             state = loadedState
@@ -72,7 +76,7 @@ fun main() {
     }
 
     // Final save with the completed season attached.
-    game.copy(currentSeason = state).saveToFile("demo-save.json")
+    game.copy(players = state.players, currentSeason = state).saveToFile("demo-save.json")
 
     println()
     println("Final table after $totalMatchdays matchdays:")
