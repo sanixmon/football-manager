@@ -1,14 +1,18 @@
 package com.footballmanager.model
 
+import com.footballmanager.serialization.LocalDateSerializer
 import java.time.LocalDate
+import kotlinx.serialization.Serializable
 
 /**
  * Root aggregate of a save game: the clubs, players, competitions and fixture
  * calendar the simulation engine operates on. Entities reference each other by
  * id (rather than object references) so this maps cleanly onto persistence later.
  */
+@Serializable
 data class Game(
     val name: String,
+    @Serializable(with = LocalDateSerializer::class)
     val currentDate: LocalDate,
     val clubs: Map<Long, Club> = emptyMap(),
     val players: Map<Long, Player> = emptyMap(),
@@ -24,4 +28,6 @@ data class Game(
     /** Players currently registered to [clubId], in squad order. */
     fun squad(clubId: Long): List<Player> =
         club(clubId).squad.playerIds.map { player(it) }
+
+    companion object {}
 }

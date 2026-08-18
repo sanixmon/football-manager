@@ -3,10 +3,13 @@ package com.footballmanager
 import com.footballmanager.model.Game
 import com.footballmanager.model.League
 import com.footballmanager.seed.SeedData
+import com.footballmanager.serialization.loadFromFile
+import com.footballmanager.serialization.saveToFile
 import com.footballmanager.simulation.KotlinRandomSource
 import com.footballmanager.simulation.MatchEngine
 import com.footballmanager.simulation.season.SeasonSimulator
 import com.footballmanager.simulation.season.StandingEntry
+import java.io.File
 import kotlin.random.Random
 
 fun main() {
@@ -25,6 +28,22 @@ fun main() {
     println()
     val champion = game.club(result.champion.team.clubId)
     println("Champion: ${champion.name} — ${result.champion.points} pts (GD ${result.champion.goalDifference})")
+
+    // ---- save / load round-trip ----
+    val savePath = "demo-save.json"
+    game.saveToFile(savePath)
+    val loaded = Game.loadFromFile(savePath)
+    val identical = loaded.name == game.name &&
+        loaded.currentDate == game.currentDate &&
+        loaded.clubs == game.clubs &&
+        loaded.players == game.players &&
+        loaded.competitions == game.competitions &&
+        loaded.calendar.fixtures() == game.calendar.fixtures()
+
+    println()
+    println("Save file   : $savePath (${File(savePath).length()} bytes)")
+    println("Load OK     : clubs=${loaded.clubs.size}, players=${loaded.players.size}, competitions=${loaded.competitions.size}")
+    println("Round-trip  : ${if (identical) "IDENTICAL" else "MISMATCH"}")
 }
 
 private fun printStandings(entries: List<StandingEntry>, game: Game) {

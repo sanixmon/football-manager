@@ -13,3 +13,6 @@ out/
 # OS / local
 .DS_Store
 local.properties
+
+# Demo save file written by Main.kt
+demo-save.json

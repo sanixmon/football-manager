@@ -1,7 +1,10 @@
 package com.footballmanager.model
 
+import com.footballmanager.serialization.LocalDateSerializer
 import java.time.LocalDate
+import kotlinx.serialization.Serializable
 
+@Serializable
 enum class SquadStatus {
     KEY_PLAYER,
     FIRST_TEAM,
@@ -10,12 +13,15 @@ enum class SquadStatus {
     YOUTH,
 }
 
+@Serializable
 data class Contract(
     val weeklyWage: Long = 0L,
+    @Serializable(with = LocalDateSerializer::class)
     val expiresOn: LocalDate,
     val squadStatus: SquadStatus = SquadStatus.ROTATION,
 )
 
+@Serializable
 data class Player(
     val id: Long,
     val name: String,

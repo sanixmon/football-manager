@@ -1,7 +1,9 @@
 package com.footballmanager.model
 
 import kotlin.math.roundToInt
+import kotlinx.serialization.Serializable
 
+@Serializable
 enum class PositionGroup {
     GOALKEEPER,
     DEFENDER,
@@ -9,6 +11,7 @@ enum class PositionGroup {
     ATTACKER,
 }
 
+@Serializable
 enum class Position(val group: PositionGroup) {
     GK(PositionGroup.GOALKEEPER),
     CB(PositionGroup.DEFENDER),

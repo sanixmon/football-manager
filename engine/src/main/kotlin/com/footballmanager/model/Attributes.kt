@@ -1,15 +1,20 @@
 package com.footballmanager.model
 
+import com.footballmanager.serialization.PlayerAttributesSerializer
+import kotlinx.serialization.Serializable
+
 /** Attributes and overall ratings use a 1..100 scale. */
 const val MIN_ATTRIBUTE = 1
 const val MAX_ATTRIBUTE = 100
 
+@Serializable
 enum class AttributeCategory {
     TECHNICAL,
     PHYSICAL,
     MENTAL,
 }
 
+@Serializable
 enum class Attribute(val category: AttributeCategory) {
     // Technical
     PASSING(AttributeCategory.TECHNICAL),
@@ -41,6 +46,7 @@ enum class Attribute(val category: AttributeCategory) {
  * Any attribute omitted from the map defaults to [MIN_ATTRIBUTE], and every
  * value is clamped into the [MIN_ATTRIBUTE]..[MAX_ATTRIBUTE] range.
  */
+@Serializable(with = PlayerAttributesSerializer::class)
 class PlayerAttributes(values: Map<Attribute, Int>) {
 
     private val normalized: Map<Attribute, Int> = Attribute.entries.associateWith { attribute ->

@@ -1,0 +1,121 @@
+package com.footballmanager.serialization
+
+import com.footballmanager.model.Attribute
+import com.footballmanager.model.Calendar
+import com.footballmanager.model.Club
+import com.footballmanager.model.Competition
+import com.footballmanager.model.Contract
+import com.footballmanager.model.Cup
+import com.footballmanager.model.Fixture
+import com.footballmanager.model.Game
+import com.footballmanager.model.League
+import com.footballmanager.model.Player
+import com.footballmanager.model.PlayerAttributes
+import com.footballmanager.model.Position
+import com.footballmanager.model.Squad
+import com.footballmanager.model.SquadStatus
+import com.footballmanager.seed.SeedData
+import java.nio.file.Files
+import java.time.LocalDate
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+class GameSerializationTest {
+
+    @Test
+    fun `round trip preserves a small game exactly`() {
+        val game = smallGame()
+        val path = tempPath("small-save.json")
+
+        game.saveToFile(path)
+        val loaded = Game.loadFromFile(path)
+
+        assertEquals(game.name, loaded.name)
+        assertEquals(game.currentDate, loaded.currentDate)
+        assertEquals(game.clubs, loaded.clubs)
+        assertEquals(game.players, loaded.players)
+        assertEquals(game.competitions, loaded.competitions)
+        assertEquals(game.calendar.fixtures(), loaded.calendar.fixtures())
+
+        // spot-check a player's attributes and contract survived intact
+        val original = game.players.getValue(1L)
+        val restored = loaded.players.getValue(1L)
+        assertEquals(original.attributes.toMap(), restored.attributes.toMap())
+        assertEquals(original.contract, restored.contract)
+    }
+
+    @Test
+    fun `round trip preserves the full seed world`() {
+        val game = SeedData.game()
+        val path = tempPath("seed-save.json")
+
+        game.saveToFile(path)
+        val loaded = Game.loadFromFile(path)
+
+        assertEquals(game.name, loaded.name)
+        assertEquals(game.currentDate, loaded.currentDate)
+        assertEquals(game.clubs, loaded.clubs)
+        assertEquals(game.players, loaded.players)
+        assertEquals(game.competitions, loaded.competitions)
+    }
+
+    private fun tempPath(name: String): String =
+        Files.createTempDirectory("fm-save").resolve(name).toString()
+
+    private fun smallGame(): Game {
+        val date = LocalDate.of(2026, 8, 1)
+        val contract = Contract(
+            weeklyWage = 50_000,
+            expiresOn = LocalDate.of(2030, 6, 30),
+            squadStatus = SquadStatus.KEY_PLAYER,
+        )
+
+        fun player(id: Long, name: String, position: Position, quality: Int): Player =
+            Player(
+                id = id,
+                name = name,
+                age = 25,
+                nationality = "ID",
+                naturalPositions = listOf(position),
+                attributes = PlayerAttributes(
+                    Attribute.entries.associateWith { attribute ->
+                        (quality + attribute.ordinal).coerceIn(1, 100)
+                    },
+                ),
+                contract = contract,
+            )
+
+        val players = mapOf(
+            1L to player(1, "Player One", Position.ST, 80),
+            2L to player(2, "Player Two", Position.CM, 70),
+            3L to player(3, "Player Three", Position.GK, 65),
+            4L to player(4, "Player Four", Position.CB, 75),
+            5L to player(5, "Player Five", Position.LW, 72),
+            6L to player(6, "Player Six", Position.RB, 60),
+        )
+
+        val clubs = mapOf(
+            1L to Club(1, "Jakarta Raya", "JKT", 1, squad = Squad(1, listOf(1, 2, 3))),
+            2L to Club(2, "Bandung Sakti", "BDG", 1, squad = Squad(2, listOf(4, 5, 6))),
+        )
+
+        val competitions = mapOf<Long, Competition>(
+            1L to League(1, "Liga Nusantara", listOf(1, 2)),
+            2L to Cup(2, "Piala Nusantara", listOf(1, 2)),
+        )
+
+        val fixtures = listOf(
+            Fixture(1, 1, date, 1, 2),
+            Fixture(2, 2, date.plusDays(7), 2, 1),
+        )
+
+        return Game(
+            name = "Test Save",
+            currentDate = date,
+            clubs = clubs,
+            players = players,
+            competitions = competitions,
+            calendar = Calendar(fixtures),
+        )
+    }
+}
