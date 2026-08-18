@@ -23,7 +23,7 @@ class SeasonSimulatorTest {
     @Test
     fun `every fixture is played exactly once`() {
         val result = season(1, teams(10))
-        assertEquals(45, result.fixtures.size)
+        assertEquals(90, result.fixtures.size)
         assertEquals(result.fixtures.size, result.results.size)
     }
 
@@ -41,8 +41,14 @@ class SeasonSimulatorTest {
         val result = season(2, teams(10))
         for (entry in result.standings.entries) {
             assertEquals(entry.played, entry.won + entry.drawn + entry.lost)
-            assertEquals(9, entry.played, "each of 10 teams plays 9 matches")
+            assertEquals(18, entry.played, "each of 10 teams plays 18 matches")
         }
+    }
+
+    @Test
+    fun `total played matches are consistent with the fixture count`() {
+        val result = season(12, teams(10))
+        assertEquals(2 * result.fixtures.size, result.standings.entries.sumOf { it.played })
     }
 
     @Test

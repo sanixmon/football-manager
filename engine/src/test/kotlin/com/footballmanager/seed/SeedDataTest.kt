@@ -34,7 +34,7 @@ class SeedDataTest {
 
         // standings: one entry per club, each team played N-1 matches, champion present
         assertEquals(game.clubs.size, result.standings.entries.size)
-        val expectedPlayed = teams.size - 1
+        val expectedPlayed = 2 * (teams.size - 1)
         for (entry in result.standings.entries) {
             assertEquals(expectedPlayed, entry.played)
         }

@@ -4,9 +4,13 @@ import com.footballmanager.simulation.Team
 import java.time.LocalDate
 
 /**
- * Generates a single round-robin schedule where every team plays every other
- * team exactly once, using the circle method. No team plays twice in a round,
- * and an odd number of teams is handled with a bye.
+ * Generates a double round-robin schedule: every team plays every other team
+ * twice, once home and once away. The first leg uses the circle method; the
+ * second leg is the first leg with home/away reversed, so each club visits
+ * exactly the opponents it hosted in the first leg.
+ *
+ * An odd number of teams is handled with a bye in each leg, so every team gets
+ * the same number of byes overall.
  */
 object FixtureGenerator {
 
@@ -18,14 +22,27 @@ object FixtureGenerator {
             "teams must have distinct club ids"
         }
 
-        val fixtures = mutableListOf<Fixture>()
         // Pad with a null "bye" so the circle method works for odd team counts.
         val padded: List<Team?> = if (teams.size % 2 == 1) teams + listOf<Team?>(null) else teams
+        val roundsPerLeg = padded.size - 1
+
+        val firstLeg = buildLeg(padded, startDate)
+        val secondLeg = firstLeg.map { fixture ->
+            Fixture(
+                round = fixture.round + roundsPerLeg,
+                date = fixture.date.plusDays(roundsPerLeg.toLong() * DAYS_PER_ROUND),
+                home = fixture.away,
+                away = fixture.home,
+            )
+        }
+        return firstLeg + secondLeg
+    }
+
+    private fun buildLeg(padded: List<Team?>, startDate: LocalDate): List<Fixture> {
         val count = padded.size
         val circle = padded.toMutableList()
-
-        val rounds = count - 1
-        for (round in 1..rounds) {
+        val fixtures = mutableListOf<Fixture>()
+        for (round in 1..(count - 1)) {
             for (i in 0 until count / 2) {
                 val first = circle[i]
                 val second = circle[count - 1 - i]
