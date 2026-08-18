@@ -37,4 +37,4 @@ jobs:
         run: gradle build
 
       - name: Run demo (seed + season end-to-end)
-        run: gradle run -q
+        run: gradle :engine:run -q
