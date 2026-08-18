@@ -2,6 +2,7 @@ package com.footballmanager
 
 import com.footballmanager.model.Game
 import com.footballmanager.model.League
+import com.footballmanager.mod.ModLoader
 import com.footballmanager.seed.SeedData
 import com.footballmanager.serialization.loadFromFile
 import com.footballmanager.serialization.saveToFile
@@ -83,6 +84,16 @@ fun main() {
     val humanPosition = state.standings.entries.indexOfFirst { it.team.clubId == humanClubId } + 1
     println("${humanClub.name} finished ${ordinal(humanPosition)} (${humanRow.points} pts)")
     println("Save file : demo-save.json (${File("demo-save.json").length()} bytes)")
+
+    // ---- mod loading demo ----
+    println()
+    val modGame = ModLoader.loadFromResource("mod/sample-mod.json")
+    println("Mod demo    : loaded '${modGame.name}' — ${modGame.clubs.size} clubs, ${modGame.players.size} players")
+    for (club in modGame.clubs.values.sortedBy { it.id }) {
+        println(
+            "  - ${club.name} (${club.defaultTactics?.formation?.label}/${club.defaultTactics?.mentality?.label}, ${modGame.squad(club.id).size} players)",
+        )
+    }
 }
 
 private fun ordinal(n: Int): String = when (n % 100) {

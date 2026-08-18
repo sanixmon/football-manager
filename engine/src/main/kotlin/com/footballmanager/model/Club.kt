@@ -1,5 +1,6 @@
 package com.footballmanager.model
 
+import com.footballmanager.simulation.Tactics
 import kotlinx.serialization.Serializable
 
 /** Money is represented as integer units of the base currency. */
@@ -37,4 +38,6 @@ data class Club(
     val finance: Finance = Finance(),
     val facilities: Facilities = Facilities(),
     val squad: Squad = Squad(id),
+    /** Default match tactics for this club, used to seed its [com.footballmanager.simulation.Team]. */
+    val defaultTactics: Tactics? = null,
 )

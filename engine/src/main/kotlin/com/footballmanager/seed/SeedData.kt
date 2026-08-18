@@ -55,11 +55,6 @@ object SeedData {
         ClubSpec("Pontianak Rovers", "PTK", 52, Formation.FIVE_THREE_TWO, Mentality.DEFENSIVE),
     )
 
-    /** Club id (1-based index) → tactics, so each club plays a distinct style. */
-    private val clubTactics: Map<Long, Tactics> = clubSpecs.mapIndexed { index, spec ->
-        (index + 1).toLong() to Tactics(spec.formation, spec.mentality)
-    }.toMap()
-
     /** 18-player squad: 2 GK, 6 DF, 5 MF, 5 FW. */
     private val squadTemplate = listOf(
         Position.GK, Position.GK,
@@ -108,6 +103,7 @@ object SeedData {
                 shortName = spec.shortName,
                 leagueId = LEAGUE_ID,
                 squad = Squad(clubId, playerIds),
+                defaultTactics = Tactics(spec.formation, spec.mentality),
             )
         }
 
@@ -124,7 +120,7 @@ object SeedData {
     /** Converts every club's squad into a [Team] via [Team.fromSquad], ordered by club id. */
     fun teams(game: Game): List<Team> =
         game.clubs.values.sortedBy { it.id }.map { club ->
-            Team.fromSquad(club.id, game.squad(club.id), clubTactics.getValue(club.id))
+            Team.fromSquad(club.id, game.squad(club.id), club.defaultTactics ?: Tactics())
         }
 
     private fun player(
