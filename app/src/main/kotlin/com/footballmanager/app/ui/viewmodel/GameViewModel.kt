@@ -1,6 +1,8 @@
 package com.footballmanager.app.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
+import com.footballmanager.app.ui.components.FmNavSection
+import com.footballmanager.app.ui.components.FmSquadTab
 import com.footballmanager.model.Game
 import com.footballmanager.model.League
 import com.footballmanager.seed.SeedData
@@ -38,6 +40,16 @@ class GameViewModel(
 
     val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
 
+    // ── Navigation ────────────────────────────────────────────────────────
+    fun navigateTo(section: FmNavSection) {
+        _uiState.update { it.copy(activeNavSection = section) }
+    }
+
+    fun selectSquadTab(tab: FmSquadTab) {
+        _uiState.update { it.copy(activeSquadTab = tab) }
+    }
+
+    // ── Tactics ───────────────────────────────────────────────────────────
     fun updateFormation(formation: Formation) {
         _uiState.update { state ->
             val newTactics = state.humanTeam.tactics.copy(formation = formation)
@@ -83,6 +95,7 @@ class GameViewModel(
         }
     }
 
+    // ── Matchday ──────────────────────────────────────────────────────────
     fun playNextMatchday() {
         _uiState.update { state ->
             if (state.currentSeason.isFinished) return@update state

@@ -1,5 +1,7 @@
 package com.footballmanager.app.ui.viewmodel
 
+import com.footballmanager.app.ui.components.FmNavSection
+import com.footballmanager.app.ui.components.FmSquadTab
 import com.footballmanager.model.Club
 import com.footballmanager.model.Game
 import com.footballmanager.model.Player
@@ -16,6 +18,9 @@ data class GameUiState(
     val isSimulating: Boolean = false,
     val currentSimTick: Int = 0,
     val lastMatchResult: MatchResult? = null,
+    // Navigation
+    val activeNavSection: FmNavSection = FmNavSection.SQUAD,
+    val activeSquadTab: FmSquadTab = FmSquadTab.OVERVIEW,
 ) {
     val humanClub: Club get() = game.club(humanClubId)
     val humanSquad: List<Player>

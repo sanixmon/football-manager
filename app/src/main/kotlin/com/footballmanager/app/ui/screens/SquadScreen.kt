@@ -36,23 +36,36 @@ import com.footballmanager.app.ui.components.PlayerDetailContent
 import com.footballmanager.app.ui.theme.FmDarkBg
 import com.footballmanager.app.ui.viewmodel.GameUiState
 import com.footballmanager.model.Player
+import com.footballmanager.simulation.Formation
+import com.footballmanager.simulation.Mentality
 import kotlinx.coroutines.launch
 
 @Composable
 fun SquadScreen(
     state: GameUiState,
     onContinueClick: () -> Unit,
+    onNavSection: (FmNavSection) -> Unit,
+    onTabSelected: (FmSquadTab) -> Unit,
+    onFormationSelected: (Formation) -> Unit,
+    onMentalitySelected: (Mentality) -> Unit,
+    onAutoSelect: () -> Unit,
+    onStarterClick: (Long) -> Unit,
+    onBenchClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var activeNavSection by remember { mutableStateOf(FmNavSection.SQUAD) }
-    var activeTab by remember { mutableStateOf(FmSquadTab.OVERVIEW) }
     var selectedPlayer by remember { mutableStateOf<Player?>(null) }
-
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
 
     val squad = state.humanSquad
     val totalWage = squad.sumOf { it.contract.weeklyWage }
+    val activeNavSection = state.activeNavSection
+    val activeTab = state.activeSquadTab
+
+    // Determine current breadcrumb + tab options based on nav section
+    val breadcrumbSection = activeNavSection.title
+    val showSquadTabs = activeNavSection == FmNavSection.SQUAD
+    val showTacticsTabs = activeNavSection == FmNavSection.TACTICS
 
     BoxWithConstraints(
         modifier = modifier
@@ -61,44 +74,115 @@ fun SquadScreen(
     ) {
         val isTablet = maxWidth >= 650.dp
 
-        if (isTablet) {
-            // Tablet / Landscape Layout: Permanent Navigation Rail + Side-by-side Table & Detail Panel
-            Row(modifier = Modifier.fillMaxSize()) {
-                // 1. Permanent Navigation Rail
-                FmNavigationRail(
-                    currentSection = activeNavSection,
-                    onSectionSelected = { activeNavSection = it },
+        @Composable
+        fun MainContent() {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Top App Bar
+                FmTopAppBar(
+                    clubName = state.humanClub.name,
+                    breadcrumb = when (activeNavSection) {
+                        FmNavSection.SQUAD -> "Overview > Squad > ${activeTab.label}"
+                        FmNavSection.TACTICS -> "Overview > Tactics"
+                        FmNavSection.SCHEDULE -> "Overview > Schedule"
+                        FmNavSection.COMPETITIONS -> "Overview > League"
+                        FmNavSection.INBOX -> "Inbox"
+                        else -> "Overview > ${activeNavSection.title}"
+                    },
+                    currentDateText = "${state.currentSeason.currentDate}",
+                    onMenuClick = if (!isTablet) ({
+                        coroutineScope.launch {
+                            if (drawerState.isClosed) drawerState.open() else drawerState.close()
+                        }
+                        Unit
+                    }) else null,
+                    onContinueClick = onContinueClick,
                 )
 
-                // 2. Main Work Area
-                Column(modifier = Modifier.weight(1f)) {
-                    // Top App Bar
-                    FmTopAppBar(
-                        clubName = state.humanClub.name,
-                        breadcrumb = "Overview > ${activeNavSection.title} > ${activeTab.label}",
-                        currentDateText = "${state.currentSeason.currentDate}",
-                        onContinueClick = onContinueClick,
-                    )
-
-                    // Tab Row
+                // Tab Row — only for Squad section
+                if (showSquadTabs) {
                     FmTabRow(
                         selectedTab = activeTab,
-                        onTabSelected = { activeTab = it },
+                        onTabSelected = onTabSelected,
                     )
+                }
 
-                    // Content Area with Split View when Player is Selected
-                    Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                        // Data Table
-                        FmSquadTable(
-                            players = squad,
-                            selectedPlayerId = selectedPlayer?.id,
-                            onPlayerClick = { clicked ->
-                                selectedPlayer = if (selectedPlayer?.id == clicked.id) null else clicked
-                            },
-                            modifier = Modifier.weight(1f),
+                // Content Area
+                Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                    // Main Content body
+                    val bodyModifier = Modifier.weight(1f)
+
+                    when (activeNavSection) {
+                        FmNavSection.SQUAD -> when (activeTab) {
+                            FmSquadTab.OVERVIEW -> FmSquadTable(
+                                players = squad,
+                                selectedPlayerId = selectedPlayer?.id,
+                                onPlayerClick = { clicked ->
+                                    selectedPlayer = if (!isTablet || selectedPlayer?.id == clicked.id) {
+                                        if (selectedPlayer?.id == clicked.id) null else clicked
+                                    } else {
+                                        clicked
+                                    }
+                                },
+                                modifier = bodyModifier,
+                            )
+                            FmSquadTab.REPORT -> SquadReportTab(
+                                players = squad,
+                                selectedPlayerId = selectedPlayer?.id,
+                                onPlayerClick = { selectedPlayer = it },
+                            )
+                            FmSquadTab.DYNAMICS -> SquadDynamicsTab(players = squad)
+                            FmSquadTab.STATS -> SquadStatsTab(
+                                players = squad,
+                                selectedPlayerId = selectedPlayer?.id,
+                                onPlayerClick = { selectedPlayer = it },
+                            )
+                            FmSquadTab.CONTRACTS -> SquadContractsTab(
+                                players = squad,
+                                selectedPlayerId = selectedPlayer?.id,
+                                onPlayerClick = { selectedPlayer = it },
+                            )
+                        }
+
+                        FmNavSection.TACTICS -> TacticsScreen(
+                            state = state,
+                            onFormationSelected = onFormationSelected,
+                            onMentalitySelected = onMentalitySelected,
+                            onAutoSelect = onAutoSelect,
+                            onStarterClick = onStarterClick,
+                            onBenchClick = onBenchClick,
+                            modifier = bodyModifier,
                         )
 
-                        // Slide-In Tablet Right Detail Panel
+                        FmNavSection.COMPETITIONS -> StandingsScreen(
+                            state = state,
+                            modifier = bodyModifier,
+                        )
+
+                        FmNavSection.SCHEDULE -> MatchdayScreen(
+                            state = state,
+                            onSimulateMatchday = onContinueClick,
+                            modifier = bodyModifier,
+                        )
+
+                        FmNavSection.INBOX -> HomeScreen(
+                            state = state,
+                            onNavigateToMatchday = { onNavSection(FmNavSection.SCHEDULE) },
+                            modifier = bodyModifier,
+                        )
+
+                        FmNavSection.DATA_HUB -> InboxScreen(
+                            state = state,
+                            modifier = bodyModifier,
+                        )
+
+                        else -> StandingsScreen(
+                            state = state,
+                            modifier = bodyModifier,
+                        )
+                    }
+
+                    // Slide-In Tablet Right Detail Panel (only for squad overview/report/stats/contracts)
+                    if (isTablet && activeNavSection == FmNavSection.SQUAD) {
                         AnimatedVisibility(
                             visible = selectedPlayer != null,
                             enter = slideInHorizontally(initialOffsetX = { it }),
@@ -113,72 +197,46 @@ fun SquadScreen(
                             }
                         }
                     }
-
-                    // Bottom Footer Bar
-                    FmFooterBar(
-                        playerCount = squad.size,
-                        totalWage = totalWage,
-                    )
                 }
+
+                // Footer Bar
+                FmFooterBar(
+                    playerCount = squad.size,
+                    totalWage = totalWage,
+                )
+            }
+        }
+
+        if (isTablet) {
+            Row(modifier = Modifier.fillMaxSize()) {
+                FmNavigationRail(
+                    currentSection = activeNavSection,
+                    onSectionSelected = onNavSection,
+                )
+                MainContent()
             }
         } else {
-            // Phone / Compact Layout: Modal Navigation Drawer + Full-Width Table + Modal Bottom Sheet
             ModalNavigationDrawer(
                 drawerState = drawerState,
                 drawerContent = {
                     FmNavigationDrawerContent(
                         currentSection = activeNavSection,
                         onSectionSelected = { section ->
-                            activeNavSection = section
+                            onNavSection(section)
                             coroutineScope.launch { drawerState.close() }
                         },
                     )
                 },
             ) {
-                Column(modifier = Modifier.fillMaxSize()) {
-                    // Top App Bar with Hamburger Toggle
-                    FmTopAppBar(
-                        clubName = state.humanClub.name,
-                        breadcrumb = "Overview > ${activeNavSection.title}",
-                        currentDateText = "${state.currentSeason.currentDate}",
-                        onMenuClick = {
-                            coroutineScope.launch {
-                                if (drawerState.isClosed) drawerState.open() else drawerState.close()
-                            }
-                        },
-                        onContinueClick = onContinueClick,
-                    )
+                MainContent()
+            }
 
-                    // Secondary Tab Row
-                    FmTabRow(
-                        selectedTab = activeTab,
-                        onTabSelected = { activeTab = it },
-                    )
-
-                    // Main Squad Data Table
-                    FmSquadTable(
-                        players = squad,
-                        selectedPlayerId = selectedPlayer?.id,
-                        onPlayerClick = { clicked ->
-                            selectedPlayer = clicked
-                        },
-                        modifier = Modifier.weight(1f),
-                    )
-
-                    // Footer Status Bar
-                    FmFooterBar(
-                        playerCount = squad.size,
-                        totalWage = totalWage,
-                    )
-
-                    // Phone Modal Bottom Sheet for Player Details
-                    if (selectedPlayer != null) {
-                        PlayerDetailBottomSheet(
-                            player = selectedPlayer,
-                            onDismiss = { selectedPlayer = null },
-                        )
-                    }
-                }
+            // Phone Modal Bottom Sheet for Player Details (Squad section only)
+            if (activeNavSection == FmNavSection.SQUAD && selectedPlayer != null) {
+                PlayerDetailBottomSheet(
+                    player = selectedPlayer,
+                    onDismiss = { selectedPlayer = null },
+                )
             }
         }
     }

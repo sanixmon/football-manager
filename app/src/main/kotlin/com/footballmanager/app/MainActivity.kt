@@ -25,6 +25,13 @@ class MainActivity : ComponentActivity() {
                 SquadScreen(
                     state = state,
                     onContinueClick = viewModel::playNextMatchday,
+                    onNavSection = viewModel::navigateTo,
+                    onTabSelected = viewModel::selectSquadTab,
+                    onFormationSelected = viewModel::updateFormation,
+                    onMentalitySelected = viewModel::updateMentality,
+                    onAutoSelect = viewModel::autoSelectBestXI,
+                    onStarterClick = viewModel::onStarterSelected,
+                    onBenchClick = viewModel::swapWithBench,
                     modifier = Modifier.fillMaxSize(),
                 )
             }
