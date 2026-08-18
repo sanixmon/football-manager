@@ -35,4 +35,11 @@ class Calendar(fixtures: List<Fixture> = emptyList()) {
     /** The first fixture involving [clubId] on or after [from]. */
     fun nextFixture(clubId: Long, from: LocalDate): Fixture? =
         fixturesFor(clubId).firstOrNull { it.date >= from }
+
+    override fun equals(other: Any?): Boolean =
+        other is Calendar && other.fixtures == fixtures
+
+    override fun hashCode(): Int = fixtures.hashCode()
+
+    override fun toString(): String = "Calendar(fixtures=$fixtures)"
 }
