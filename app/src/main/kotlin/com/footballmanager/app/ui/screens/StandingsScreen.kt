@@ -150,21 +150,22 @@ fun StandingsScreen(state: GameUiState, modifier: Modifier = Modifier) {
                     modifier = Modifier.weight(1f),
                 )
 
-                // Stats columns
-                fun statCell(value: String, mod: Modifier, color: Color = FmTextSecondary) =
-                    Text(value, style = MaterialTheme.typography.labelSmall, color = color, fontSize = 11.sp, modifier = mod, textAlign = TextAlign.Center)
-
-                statCell("${entry.played}", Modifier.width(26.dp))
-                statCell("${entry.won}", Modifier.width(26.dp), FmRatingHigh)
-                statCell("${entry.drawn}", Modifier.width(26.dp), FmRatingMed)
-                statCell("${entry.lost}", Modifier.width(26.dp), FmRatingLow)
-                statCell("${entry.goalsFor}", Modifier.width(28.dp))
-                statCell("${entry.goalsAgainst}", Modifier.width(28.dp))
+                // Stats columns — direct Text calls (no local composable allowed)
+                Text("${entry.played}", style = MaterialTheme.typography.labelSmall, color = FmTextSecondary, fontSize = 11.sp, modifier = Modifier.width(26.dp), textAlign = TextAlign.Center)
+                Text("${entry.won}", style = MaterialTheme.typography.labelSmall, color = FmRatingHigh, fontSize = 11.sp, modifier = Modifier.width(26.dp), textAlign = TextAlign.Center)
+                Text("${entry.drawn}", style = MaterialTheme.typography.labelSmall, color = FmRatingMed, fontSize = 11.sp, modifier = Modifier.width(26.dp), textAlign = TextAlign.Center)
+                Text("${entry.lost}", style = MaterialTheme.typography.labelSmall, color = FmRatingLow, fontSize = 11.sp, modifier = Modifier.width(26.dp), textAlign = TextAlign.Center)
+                Text("${entry.goalsFor}", style = MaterialTheme.typography.labelSmall, color = FmTextSecondary, fontSize = 11.sp, modifier = Modifier.width(28.dp), textAlign = TextAlign.Center)
+                Text("${entry.goalsAgainst}", style = MaterialTheme.typography.labelSmall, color = FmTextSecondary, fontSize = 11.sp, modifier = Modifier.width(28.dp), textAlign = TextAlign.Center)
                 val gd = entry.goalDifference
-                statCell(
+                val gdColor = if (gd > 0) FmRatingHigh else if (gd < 0) FmRatingLow else FmTextSecondary
+                Text(
                     if (gd >= 0) "+$gd" else "$gd",
-                    Modifier.width(32.dp),
-                    if (gd > 0) FmRatingHigh else if (gd < 0) FmRatingLow else FmTextSecondary,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = gdColor,
+                    fontSize = 11.sp,
+                    modifier = Modifier.width(32.dp),
+                    textAlign = TextAlign.Center,
                 )
 
                 // Points (prominent)
