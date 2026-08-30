@@ -120,12 +120,66 @@ fun InboxScreen(
                 ))
             }
         }
+        // Dynamic Transfer Notifications
+        season.activeBids.forEach { bid ->
+            val player = season.players[bid.playerId]
+            val playerName = player?.name ?: "Player #${bid.playerId}"
+            when (bid.status) {
+                com.footballmanager.model.BidStatus.ACCEPTED_BY_PLAYER -> {
+                    add(InboxMessage(
+                        icon = Icons.Outlined.SportsSoccer,
+                        iconColor = FmRatingHigh,
+                        from = "Transfer Office",
+                        subject = "Contract Agreed: $playerName",
+                        preview = "$playerName has accepted your contract terms. Head to Transfers to finalize the deal.",
+                        time = "${season.currentDate}",
+                        isRead = false,
+                    ))
+                }
+                com.footballmanager.model.BidStatus.ACCEPTED_BY_CLUB -> {
+                    add(InboxMessage(
+                        icon = Icons.Outlined.Notifications,
+                        iconColor = FmAccentCyan,
+                        from = "Transfer Office",
+                        subject = "Bid Accepted for $playerName",
+                        preview = "The selling club agreed to your offer of $${"%,d".format(bid.feeOffered)}. Offer contract terms to proceed.",
+                        time = "${season.currentDate}",
+                        isRead = false,
+                    ))
+                }
+                com.footballmanager.model.BidStatus.REJECTED_BY_CLUB -> {
+                    add(InboxMessage(
+                        icon = Icons.Outlined.Notifications,
+                        iconColor = Color(0xFFEF4444),
+                        from = "Transfer Office",
+                        subject = "Bid Rejected: $playerName",
+                        preview = "The selling club turned down your transfer bid of $${"%,d".format(bid.feeOffered)}.",
+                        time = "${season.currentDate}",
+                        isRead = true,
+                    ))
+                }
+                else -> {}
+            }
+        }
+
+        season.transferHistory.takeLast(2).forEach { record ->
+            add(InboxMessage(
+                icon = Icons.Outlined.MarkEmailRead,
+                iconColor = FmRatingHigh,
+                from = "Transfer Office",
+                subject = "Transfer Confirmed: ${record.playerName}",
+                preview = "Deal completed for a fee of $${"%,d".format(record.fee)} on ${record.date}.",
+                time = "${record.date}",
+                isRead = true,
+            ))
+        }
+
         add(InboxMessage(
             icon = Icons.Outlined.MarkEmailRead,
             iconColor = FmTextSecondary,
             from = "Scouting Team",
             subject = "Transfer Window Update",
-            preview = "We have identified 3 potential transfer targets for your consideration. Tap to review.",
+            preview = "We have identified potential transfer targets for your consideration. Tap Scouting to review.",
             time = "${season.currentDate.minusDays(3)}",
             isRead = true,
         ))

@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Group
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.LocalHospital
 import androidx.compose.material.icons.outlined.Mail
@@ -60,6 +61,7 @@ enum class FmNavSection(
     val icon: ImageVector,
     val group: String,
 ) {
+    HOME("Home", Icons.Outlined.Home, "GENERAL"),
     INBOX("Inbox", Icons.Outlined.Mail, "GENERAL"),
     SQUAD("Squad", Icons.Outlined.Group, "TEAM"),
     DYNAMICS("Dynamics", Icons.Outlined.Hub, "TEAM"),

@@ -242,7 +242,7 @@ fun PlayerDetailContent(
             Column {
                 Text(text = "Weekly Wage", style = MaterialTheme.typography.bodySmall, color = FmTextMuted)
                 Text(
-                    text = "Rp ${(player.contract.weeklyWage / 1_000_000).coerceAtLeast(5)}M/w",
+                    text = "$${"%,d".format(player.contract.weeklyWage)}/w",
                     style = MaterialTheme.typography.titleMedium,
                     color = Color.White,
                 )

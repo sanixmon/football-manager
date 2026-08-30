@@ -168,9 +168,14 @@ fun SquadScreen(
                             modifier = bodyModifier,
                         )
 
-                        FmNavSection.INBOX -> HomeScreen(
+                        FmNavSection.HOME -> HomeScreen(
                             state = state,
                             onNavigateToMatchday = { onNavSection(FmNavSection.SCHEDULE) },
+                            modifier = bodyModifier,
+                        )
+
+                        FmNavSection.INBOX -> InboxScreen(
+                            state = state,
                             modifier = bodyModifier,
                         )
 

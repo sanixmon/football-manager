@@ -65,6 +65,7 @@ fun TransfersScreen(
     var selectedSubTab by remember { mutableIntStateOf(0) }
     var negotiatingBid by remember { mutableStateOf<TransferBid?>(null) }
     var negotiatingPlayer by remember { mutableStateOf<Player?>(null) }
+    var inspectingPlayer by remember { mutableStateOf<Player?>(null) }
 
     val activeBids = state.activeBids
     val history = state.transferHistory
@@ -132,7 +133,11 @@ fun TransfersScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { inspectingPlayer = player },
+                            ) {
                                 Text(playerName, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FmTextPrimary)
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
@@ -204,12 +209,14 @@ fun TransfersScreen(
                     items(history, key = { it.id }) { record ->
                         val toClub = state.game.clubs[record.toClubId]?.name ?: "Club #${record.toClubId}"
                         val fromClub = record.fromClubId?.let { state.game.clubs[it]?.name } ?: "Free Agent"
+                        val player = state.currentSeason.players[record.playerId]
 
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(FmCardBg, RoundedCornerShape(6.dp))
                                 .border(1.dp, FmBorder, RoundedCornerShape(6.dp))
+                                .clickable { inspectingPlayer = player }
                                 .padding(12.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
@@ -240,5 +247,10 @@ fun TransfersScreen(
                 },
             )
         }
+
+        com.footballmanager.app.ui.components.PlayerDetailBottomSheet(
+            player = inspectingPlayer,
+            onDismiss = { inspectingPlayer = null },
+        )
     }
 }

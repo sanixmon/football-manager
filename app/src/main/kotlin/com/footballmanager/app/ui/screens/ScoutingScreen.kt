@@ -67,6 +67,7 @@ fun ScoutingScreen(
     var searchQuery by remember { mutableStateOf("") }
     var selectedGroup by remember { mutableStateOf<PositionGroup?>(null) }
     var biddingPlayer by remember { mutableStateOf<Player?>(null) }
+    var inspectingPlayer by remember { mutableStateOf<Player?>(null) }
 
     val allPlayers = state.allPlayers
     val humanSquadIds = state.humanSquad.map { it.id }.toSet()
@@ -163,6 +164,7 @@ fun ScoutingScreen(
                         .fillMaxWidth()
                         .border(width = 0.5.dp, color = FmBorder)
                         .background(FmDarkBg)
+                        .clickable { inspectingPlayer = player }
                         .padding(horizontal = 16.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -202,5 +204,10 @@ fun ScoutingScreen(
                 },
             )
         }
+
+        com.footballmanager.app.ui.components.PlayerDetailBottomSheet(
+            player = inspectingPlayer,
+            onDismiss = { inspectingPlayer = null },
+        )
     }
 }
