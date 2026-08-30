@@ -97,11 +97,18 @@ object SeedData {
                 )
                 playerId
             }
+            val transferBudget = (spec.quality * 100_000L)
+            val weeklyWageBudget = (spec.quality * 1_500L)
             clubs[clubId] = Club(
                 id = clubId,
                 name = spec.name,
                 shortName = spec.shortName,
                 leagueId = LEAGUE_ID,
+                finance = com.footballmanager.model.Finance(
+                    balance = transferBudget * 2,
+                    transferBudget = transferBudget,
+                    weeklyWageBudget = weeklyWageBudget,
+                ),
                 squad = Squad(clubId, playerIds),
                 defaultTactics = Tactics(spec.formation, spec.mentality),
             )
@@ -129,15 +136,18 @@ object SeedData {
         position: Position,
         quality: Int,
         random: Random,
-    ): Player = Player(
-        id = id,
-        name = name,
-        age = 18 + random.nextInt(0, 16),
-        nationality = "ID",
-        naturalPositions = listOf(position),
-        attributes = attributes(position, quality, random),
-        contract = Contract(expiresOn = LocalDate.of(2030, 6, 30)),
-    )
+    ): Player {
+        val weeklyWage = 1000L + (quality * 50L) + (random.nextInt(0, 10) * 100L)
+        return Player(
+            id = id,
+            name = name,
+            age = 18 + random.nextInt(0, 16),
+            nationality = "ID",
+            naturalPositions = listOf(position),
+            attributes = attributes(position, quality, random),
+            contract = Contract(weeklyWage = weeklyWage, expiresOn = LocalDate.of(2030, 6, 30)),
+        )
+    }
 
     /**
      * Generates attributes for [position] by boosting key attributes (from

@@ -36,4 +36,12 @@ data class GameUiState(
         get() = humanLineup.starters.mapNotNull { currentSeason.players[it] }
     val substitutes: List<Player>
         get() = humanLineup.substitutes.mapNotNull { currentSeason.players[it] }
+    val allPlayers: List<Player>
+        get() = currentSeason.players.values.toList().ifEmpty { game.players.values.toList() }
+    val activeBids: List<com.footballmanager.model.TransferBid>
+        get() = currentSeason.activeBids
+    val transferHistory: List<com.footballmanager.model.TransferRecord>
+        get() = currentSeason.transferHistory
+    val humanFinance: com.footballmanager.model.Finance
+        get() = currentSeason.clubs[humanClubId]?.finance ?: humanClub.finance
 }

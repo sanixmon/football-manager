@@ -22,6 +22,10 @@ interface AppContainer {
     val selectLineupUseCase: SelectLineupUseCase
     val calculateTeamStrengthUseCase: CalculateTeamStrengthUseCase
     val simulateMatchUseCase: SimulateMatchUseCase
+    val submitTransferBidUseCase: com.footballmanager.usecase.SubmitTransferBidUseCase
+    val evaluateTransferOfferUseCase: com.footballmanager.usecase.EvaluateTransferOfferUseCase
+    val negotiateContractUseCase: com.footballmanager.usecase.NegotiateContractUseCase
+    val completeTransferUseCase: com.footballmanager.usecase.CompleteTransferUseCase
     val seasonRunner: SeasonRunner
     val gameViewModelFactory: ViewModelProvider.Factory
 }
@@ -55,6 +59,22 @@ class DefaultAppContainer(
         SimulateMatchUseCase()
     }
 
+    override val submitTransferBidUseCase: com.footballmanager.usecase.SubmitTransferBidUseCase by lazy {
+        com.footballmanager.usecase.SubmitTransferBidUseCase()
+    }
+
+    override val evaluateTransferOfferUseCase: com.footballmanager.usecase.EvaluateTransferOfferUseCase by lazy {
+        com.footballmanager.usecase.EvaluateTransferOfferUseCase()
+    }
+
+    override val negotiateContractUseCase: com.footballmanager.usecase.NegotiateContractUseCase by lazy {
+        com.footballmanager.usecase.NegotiateContractUseCase()
+    }
+
+    override val completeTransferUseCase: com.footballmanager.usecase.CompleteTransferUseCase by lazy {
+        com.footballmanager.usecase.CompleteTransferUseCase()
+    }
+
     override val seasonRunner: SeasonRunner by lazy {
         SeasonRunner()
     }
@@ -67,6 +87,10 @@ class DefaultAppContainer(
                     gameRepository = gameRepository,
                     runner = seasonRunner,
                     selectLineupUseCase = selectLineupUseCase,
+                    submitTransferBidUseCase = submitTransferBidUseCase,
+                    evaluateTransferOfferUseCase = evaluateTransferOfferUseCase,
+                    negotiateContractUseCase = negotiateContractUseCase,
+                    completeTransferUseCase = completeTransferUseCase,
                 ) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")

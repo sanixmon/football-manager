@@ -12,7 +12,14 @@ import com.footballmanager.simulation.Formation
 import com.footballmanager.simulation.Lineup
 import com.footballmanager.simulation.Mentality
 import com.footballmanager.simulation.season.SeasonRunner
+import com.footballmanager.model.SquadStatus
+import com.footballmanager.model.ContractOffer
+import com.footballmanager.usecase.CalculateTeamStrengthUseCase
+import com.footballmanager.usecase.CompleteTransferUseCase
+import com.footballmanager.usecase.EvaluateTransferOfferUseCase
+import com.footballmanager.usecase.NegotiateContractUseCase
 import com.footballmanager.usecase.SelectLineupUseCase
+import com.footballmanager.usecase.SubmitTransferBidUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,6 +29,10 @@ class GameViewModel(
     private val gameRepository: GameRepository = InMemoryGameRepository(SeedData.game()),
     private val runner: SeasonRunner = SeasonRunner(),
     private val selectLineupUseCase: SelectLineupUseCase = SelectLineupUseCase(),
+    private val submitTransferBidUseCase: SubmitTransferBidUseCase = SubmitTransferBidUseCase(),
+    private val evaluateTransferOfferUseCase: EvaluateTransferOfferUseCase = EvaluateTransferOfferUseCase(),
+    private val negotiateContractUseCase: NegotiateContractUseCase = NegotiateContractUseCase(),
+    private val completeTransferUseCase: CompleteTransferUseCase = CompleteTransferUseCase(),
 ) : ViewModel() {
 
     /** Backward-compatible convenience constructor. */
@@ -29,7 +40,11 @@ class GameViewModel(
         initialGame: Game,
         runner: SeasonRunner = SeasonRunner(),
         selectLineupUseCase: SelectLineupUseCase = SelectLineupUseCase(),
-    ) : this(InMemoryGameRepository(initialGame), runner, selectLineupUseCase)
+    ) : this(
+        gameRepository = InMemoryGameRepository(initialGame),
+        runner = runner,
+        selectLineupUseCase = selectLineupUseCase,
+    )
 
     private val _uiState: MutableStateFlow<GameUiState>
 
@@ -167,6 +182,109 @@ class GameViewModel(
                 lastMatchResult = userMatchResult,
                 selectedStarterPlayerId = null,
             )
+        }
+    }
+
+    // ── Transfers & Finance ────────────────────────────────────────────────
+    fun submitTransferBid(playerId: Long, feeOffered: Long) {
+        _uiState.update { state ->
+            val player = state.currentSeason.players[playerId] ?: return@update state
+            val buyer = state.currentSeason.clubs[state.humanClubId] ?: state.humanClub
+            val sellerClubId = state.currentSeason.clubs.values.firstOrNull { it.squad.contains(playerId) }?.id
+
+            val bidId = (state.activeBids.maxOfOrNull { it.id } ?: 0L) + 1L
+            val bid = submitTransferBidUseCase.execute(
+                bidId = bidId,
+                buyingClub = buyer,
+                player = player,
+                sellingClubId = sellerClubId,
+                feeOffered = feeOffered,
+                currentDate = state.currentSeason.currentDate,
+            )
+
+            val evaluatedBid = if (sellerClubId != null) {
+                val decision = evaluateTransferOfferUseCase.execute(
+                    bid = bid,
+                    player = player,
+                    currentDate = state.currentSeason.currentDate,
+                )
+                evaluateTransferOfferUseCase.applyDecisionToBid(bid, decision)
+            } else {
+                bid
+            }
+
+            val updatedBids = state.activeBids.filter { it.id != bidId } + evaluatedBid
+            val updatedSeason = state.currentSeason.copy(activeBids = updatedBids)
+            val updatedGame = state.game.copy(currentSeason = updatedSeason)
+            gameRepository.saveGame(updatedGame)
+            state.copy(game = updatedGame, currentSeason = updatedSeason)
+        }
+    }
+
+    fun offerContractTerms(bidId: Long, weeklyWage: Long, years: Int, squadStatus: SquadStatus) {
+        _uiState.update { state ->
+            val bid = state.activeBids.firstOrNull { it.id == bidId } ?: return@update state
+            val player = state.currentSeason.players[bid.playerId] ?: return@update state
+            val offer = ContractOffer(
+                weeklyWage = weeklyWage,
+                contractYears = years,
+                squadStatus = squadStatus,
+            )
+            val decision = negotiateContractUseCase.evaluate(player, offer)
+            val updatedBid = negotiateContractUseCase.applyOffer(bid, offer, decision)
+
+            val updatedBids = state.activeBids.map { if (it.id == bidId) updatedBid else it }
+            val updatedSeason = state.currentSeason.copy(activeBids = updatedBids)
+            val updatedGame = state.game.copy(currentSeason = updatedSeason)
+            gameRepository.saveGame(updatedGame)
+            state.copy(game = updatedGame, currentSeason = updatedSeason)
+        }
+    }
+
+    fun completeTransferDeal(bidId: Long) {
+        _uiState.update { state ->
+            val bid = state.activeBids.firstOrNull { it.id == bidId } ?: return@update state
+            val buyer = state.currentSeason.clubs[bid.buyingClubId] ?: state.game.club(bid.buyingClubId)
+            val seller = bid.sellingClubId?.let { state.currentSeason.clubs[it] ?: state.game.club(it) }
+            val player = state.currentSeason.players[bid.playerId] ?: return@update state
+
+            val result = completeTransferUseCase.execute(
+                bid = bid,
+                buyer = buyer,
+                seller = seller,
+                player = player,
+                currentDate = state.currentSeason.currentDate,
+            )
+
+            val updatedClubs = state.currentSeason.clubs + (result.updatedBuyer.id to result.updatedBuyer) +
+                (result.updatedSeller?.let { listOf(it.id to it) } ?: emptyList())
+            val updatedPlayers = state.currentSeason.players + (result.updatedPlayer.id to result.updatedPlayer)
+            val updatedBids = state.activeBids.filter { it.id != bidId }
+            val updatedHistory = state.transferHistory + result.record
+
+            val updatedSeason = state.currentSeason.copy(
+                clubs = updatedClubs,
+                players = updatedPlayers,
+                activeBids = updatedBids,
+                transferHistory = updatedHistory,
+            )
+            val updatedGame = state.game.copy(
+                clubs = updatedClubs,
+                players = updatedPlayers,
+                currentSeason = updatedSeason,
+            )
+            gameRepository.saveGame(updatedGame)
+            state.copy(game = updatedGame, currentSeason = updatedSeason)
+        }
+    }
+
+    fun cancelTransferDeal(bidId: Long) {
+        _uiState.update { state ->
+            val updatedBids = state.activeBids.filter { it.id != bidId }
+            val updatedSeason = state.currentSeason.copy(activeBids = updatedBids)
+            val updatedGame = state.game.copy(currentSeason = updatedSeason)
+            gameRepository.saveGame(updatedGame)
+            state.copy(game = updatedGame, currentSeason = updatedSeason)
         }
     }
 }

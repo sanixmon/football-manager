@@ -36,6 +36,10 @@ class MainActivity : ComponentActivity() {
                     onAutoSelect = viewModel::autoSelectBestXI,
                     onStarterClick = viewModel::onStarterSelected,
                     onBenchClick = viewModel::swapWithBench,
+                    onSubmitBid = viewModel::submitTransferBid,
+                    onOfferContract = viewModel::offerContractTerms,
+                    onCompleteDeal = viewModel::completeTransferDeal,
+                    onCancelDeal = viewModel::cancelTransferDeal,
                     modifier = Modifier.fillMaxSize(),
                 )
             }

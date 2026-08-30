@@ -51,6 +51,10 @@ fun SquadScreen(
     onAutoSelect: () -> Unit,
     onStarterClick: (Long) -> Unit,
     onBenchClick: (Long) -> Unit,
+    onSubmitBid: (playerId: Long, fee: Long) -> Unit = { _, _ -> },
+    onOfferContract: (bidId: Long, weeklyWage: Long, years: Int, squadStatus: com.footballmanager.model.SquadStatus) -> Unit = { _, _, _, _ -> },
+    onCompleteDeal: (bidId: Long) -> Unit = {},
+    onCancelDeal: (bidId: Long) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var selectedPlayer by remember { mutableStateOf<Player?>(null) }
@@ -170,7 +174,21 @@ fun SquadScreen(
                             modifier = bodyModifier,
                         )
 
-                        FmNavSection.DATA_HUB -> InboxScreen(
+                        FmNavSection.SCOUTING -> ScoutingScreen(
+                            state = state,
+                            onSubmitBid = onSubmitBid,
+                            modifier = bodyModifier,
+                        )
+
+                        FmNavSection.TRANSFERS -> TransfersScreen(
+                            state = state,
+                            onOfferContract = onOfferContract,
+                            onCompleteDeal = onCompleteDeal,
+                            onCancelDeal = onCancelDeal,
+                            modifier = bodyModifier,
+                        )
+
+                        FmNavSection.FINANCES -> FinancesScreen(
                             state = state,
                             modifier = bodyModifier,
                         )
