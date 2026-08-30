@@ -1,12 +1,8 @@
 package com.footballmanager.usecase
 
 import com.footballmanager.model.BoardObjectives
-import com.footballmanager.model.Club
-import com.footballmanager.model.ManagerProfile
-import com.footballmanager.model.Player
 import com.footballmanager.model.PlayerSeasonStats
 import com.footballmanager.model.Position
-import com.footballmanager.simulation.MatchEventType
 import com.footballmanager.simulation.MatchResult
 import com.footballmanager.simulation.season.SeasonState
 
@@ -53,40 +49,42 @@ class ApplyMatchResultToWorldUseCase {
             starters: List<Long>,
             isWin: Boolean,
             isLoss: Boolean,
+            goalsScored: Int,
             concededGoals: Int,
         ) {
-            val goalsByPlayer = matchResult.events
-                .filter { it.type == MatchEventType.GOAL && it.clubId == clubId }
-                .groupingBy { it.playerId }
-                .eachCount()
+            // Find forwards/attackers among starters to attribute goals
+            val starterPlayers = starters.mapNotNull { updatedPlayers[it] }
+            val attackingStarters = starterPlayers.filter {
+                it.bestPosition() == Position.ST || it.naturalPositions.any { pos -> pos.name.startsWith("W") || pos.name.startsWith("A") }
+            }.ifEmpty { starterPlayers.takeLast(3) }
 
-            val yellowCards = matchResult.events
-                .filter { it.type == MatchEventType.YELLOW_CARD && it.clubId == clubId }
-                .map { it.playerId }
-                .toSet()
-
-            val redCards = matchResult.events
-                .filter { it.type == MatchEventType.RED_CARD && it.clubId == clubId }
-                .map { it.playerId }
-                .toSet()
+            var remainingGoals = goalsScored
+            val goalsByPlayer = mutableMapOf<Long, Int>()
+            if (attackingStarters.isNotEmpty()) {
+                var idx = 0
+                while (remainingGoals > 0) {
+                    val p = attackingStarters[idx % attackingStarters.size]
+                    goalsByPlayer[p.id] = (goalsByPlayer[p.id] ?: 0) + 1
+                    remainingGoals--
+                    idx++
+                }
+            }
 
             for (playerId in starters) {
                 val player = updatedPlayers[playerId] ?: continue
                 val goals = goalsByPlayer[playerId] ?: 0
-                val yellow = playerId in yellowCards
-                val red = playerId in redCards
                 val isGkOrDef = player.bestPosition() == Position.GK || player.naturalPositions.any { it.name.endsWith("B") }
                 val cleanSheet = isGkOrDef && concededGoals == 0
 
                 // Fatigue & Morale update
-                val newFitness = (player.fitness - 14).coerceIn(0, 100)
+                val newFitness = (player.fitness - 14).coerceIn(1, 100)
                 val moraleDelta = if (isWin) +6 else if (isLoss) -4 else +1
-                val newMorale = (player.morale + moraleDelta).coerceIn(0, 100)
+                val newMorale = (player.morale + moraleDelta).coerceIn(1, 100)
                 updatedPlayers[playerId] = player.copy(fitness = newFitness, morale = newMorale)
 
                 // Match rating formula
                 val baseRating = if (isWin) 6.8 else if (isLoss) 5.8 else 6.2
-                val matchRating = (baseRating + (goals * 1.2) + (if (cleanSheet) 0.6 else 0.0) - (if (yellow) 0.3 else 0.0) - (if (red) 1.5 else 0.0))
+                val matchRating = (baseRating + (goals * 1.2) + (if (cleanSheet) 0.6 else 0.0))
                     .coerceIn(4.0, 10.0)
 
                 val existingStat = updatedStats[playerId] ?: PlayerSeasonStats(playerId = playerId)
@@ -96,14 +94,14 @@ class ApplyMatchResultToWorldUseCase {
                     assistsMade = 0,
                     cleanSheet = cleanSheet,
                     matchRating = matchRating,
-                    yellow = yellow,
-                    red = red,
+                    yellow = false,
+                    red = false,
                 )
             }
         }
 
-        processTeam(homeClubId, homeStarters, isHomeWin, isAwayWin, awayGoals)
-        processTeam(awayClubId, awayStarters, isAwayWin, isHomeWin, homeGoals)
+        processTeam(homeClubId, homeStarters, isHomeWin, isAwayWin, homeGoals, awayGoals)
+        processTeam(awayClubId, awayStarters, isAwayWin, isHomeWin, awayGoals, homeGoals)
 
         // 4. Update Manager Profile if human club participated
         val humanClubId = season.humanClubId

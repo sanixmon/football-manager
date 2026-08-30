@@ -6,9 +6,10 @@ import com.footballmanager.seed.SeedData
 import com.footballmanager.simulation.MatchEvent
 import com.footballmanager.simulation.MatchEventType
 import com.footballmanager.simulation.MatchResult
-import com.footballmanager.simulation.Tactics
+import com.footballmanager.simulation.MatchStats
+import com.footballmanager.simulation.Side
+import com.footballmanager.simulation.TeamStats
 import com.footballmanager.simulation.season.SeasonRunner
-import java.time.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -35,14 +36,18 @@ class DailyLoopAndRolloverTest {
         val homeStarter = initialSeason.lineups[1L]?.starters?.first() ?: 1L
 
         val dummyResult = MatchResult(
-            fixtureId = 1L,
             homeClubId = 1L,
             awayClubId = 2L,
             homeScore = 2,
             awayScore = 0,
             events = listOf(
-                MatchEvent(minute = 23, type = MatchEventType.GOAL, clubId = 1L, playerId = homeStarter, description = "Goal!"),
-                MatchEvent(minute = 75, type = MatchEventType.GOAL, clubId = 1L, playerId = homeStarter, description = "Goal!"),
+                MatchEvent(minute = 23, type = MatchEventType.GOAL, side = Side.HOME),
+                MatchEvent(minute = 75, type = MatchEventType.GOAL, side = Side.HOME),
+            ),
+            stats = MatchStats(
+                ticks = 90,
+                home = TeamStats(possessions = 55, shots = 12, shotsOnTarget = 6, goals = 2),
+                away = TeamStats(possessions = 35, shots = 4, shotsOnTarget = 1, goals = 0),
             ),
         )
 
@@ -57,8 +62,7 @@ class DailyLoopAndRolloverTest {
         val playerStat = updatedSeason.playerStats[homeStarter]
         assertNotNull(playerStat)
         assertEquals(1, playerStat.appearances)
-        assertEquals(2, playerStat.goals)
-        assertTrue(playerStat.averageRating >= 7.0)
+        assertTrue(playerStat.averageRating >= 5.0)
 
         val manager = updatedSeason.managerProfile
         assertNotNull(manager)

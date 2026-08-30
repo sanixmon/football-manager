@@ -10,8 +10,9 @@ import com.footballmanager.model.Position
 import com.footballmanager.model.PositionWeights
 import com.footballmanager.model.Squad
 import com.footballmanager.simulation.Team
-import com.footballmanager.simulation.season.RoundRobinScheduler
+import com.footballmanager.simulation.season.FixtureGenerator
 import com.footballmanager.simulation.season.SeasonState
+import com.footballmanager.simulation.season.StandingEntry
 import com.footballmanager.simulation.season.Standings
 import java.time.LocalDate
 import kotlin.random.Random
@@ -102,8 +103,8 @@ class SeasonRolloverUseCase(
             Team.fromSquad(club.id, squad, club.defaultTactics ?: currentSeason.teams.first { it.clubId == club.id }.tactics)
         }
 
-        val fixtures = RoundRobinScheduler.schedule(teams, newStartDate)
-        val initialStandings = Standings.initial(teams)
+        val fixtures = FixtureGenerator.generate(teams, newStartDate)
+        val initialStandings = Standings(teams.map { StandingEntry(it) }.sortedWith(Standings.comparator))
 
         return SeasonState(
             league = currentSeason.league,
