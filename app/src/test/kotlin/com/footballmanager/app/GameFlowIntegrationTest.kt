@@ -30,7 +30,8 @@ class GameFlowIntegrationTest {
         // Advance matchday
         vm.playNextMatchday()
         val nextState = vm.uiState.value
-        assertEquals(1, nextState.currentSeason.currentRound)
+        assertTrue(nextState.currentSeason.results.isNotEmpty())
+        assertEquals(2, nextState.currentSeason.nextMatchday)
         assertNotNull(nextState.lastMatchResult)
     }
 
@@ -44,13 +45,13 @@ class GameFlowIntegrationTest {
         val container1 = DefaultAppContainer(saveFile = tempSaveFile, defaultGameProvider = { SeedData.game() })
         val vm1 = container1.gameViewModelFactory.create(com.footballmanager.app.ui.viewmodel.GameViewModel::class.java)
         vm1.playNextMatchday()
-        assertEquals(1, vm1.uiState.value.currentSeason.currentRound)
+        assertTrue(vm1.uiState.value.currentSeason.results.isNotEmpty())
         assertTrue(tempSaveFile.exists())
 
         // 2nd Session: reload from disk
         val container2 = DefaultAppContainer(saveFile = tempSaveFile, defaultGameProvider = { SeedData.game() })
         val vm2 = container2.gameViewModelFactory.create(com.footballmanager.app.ui.viewmodel.GameViewModel::class.java)
-        assertEquals(1, vm2.uiState.value.currentSeason.currentRound)
+        assertEquals(vm1.uiState.value.currentSeason.results.size, vm2.uiState.value.currentSeason.results.size)
         assertEquals(vm1.uiState.value.lastMatchResult, vm2.uiState.value.lastMatchResult)
     }
 }
