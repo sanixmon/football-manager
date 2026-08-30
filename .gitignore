@@ -16,3 +16,4 @@ local.properties
 
 # Demo save file written by Main.kt
 demo-save.json
+graphify-out/

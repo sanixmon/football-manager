@@ -120,6 +120,9 @@ object PositionWeights {
         ),
     )
 
+    /** Precomputed sum of attribute weights per position for fast rating lookups. */
+    val totalWeights: Map<Position, Int> = weights.mapValues { it.value.values.sum() }
+
     init {
         require(weights.keys == Position.entries.toSet()) {
             "PositionWeights must define weights for every position"
@@ -133,7 +136,7 @@ object PositionWeights {
  */
 fun PlayerAttributes.overall(position: Position): Int {
     val positionWeights = PositionWeights.weights.getValue(position)
-    val totalWeight = positionWeights.values.sum()
+    val totalWeight = PositionWeights.totalWeights.getValue(position)
     val weightedSum = positionWeights.entries.sumOf { (attribute, weight) ->
         this[attribute] * weight
     }

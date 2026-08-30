@@ -8,13 +8,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import com.footballmanager.app.di.DefaultAppContainer
 import com.footballmanager.app.ui.screens.SquadScreen
 import com.footballmanager.app.ui.theme.FootballManagerTheme
 import com.footballmanager.app.ui.viewmodel.GameViewModel
 
 class MainActivity : ComponentActivity() {
 
-    private val viewModel: GameViewModel by viewModels()
+    private val viewModel: GameViewModel by viewModels {
+        (application as? FootballManagerApp)?.container?.gameViewModelFactory
+            ?: DefaultAppContainer().gameViewModelFactory
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

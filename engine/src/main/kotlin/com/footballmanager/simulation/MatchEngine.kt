@@ -1,5 +1,8 @@
 package com.footballmanager.simulation
 
+import com.footballmanager.logging.MatchLogger
+import com.footballmanager.logging.NoOpMatchLogger
+
 /**
  * A simple, deterministic, tick-based football match engine.
  *
@@ -16,10 +19,16 @@ package com.footballmanager.simulation
  */
 class MatchEngine(
     private val random: RandomSource = KotlinRandomSource(),
+    private val logger: MatchLogger = NoOpMatchLogger,
 ) {
+
+    /** Seeded convenience constructor. */
+    constructor(seed: Long, logger: MatchLogger = NoOpMatchLogger) : this(KotlinRandomSource(java.util.Random(seed)), logger)
 
     fun simulate(home: Team, away: Team): MatchResult {
         require(home.clubId != away.clubId) { "home and away must be different clubs" }
+
+        logger.onMatchStart(home, away)
 
         val homeAttack = home.effectiveAttack() * HOME_ADVANTAGE
         val homeDefense = home.effectiveDefense() * HOME_ADVANTAGE
@@ -71,14 +80,20 @@ class MatchEngine(
                         awayGoals++
                         awayOnTarget++
                     }
-                    events += MatchEvent(minute, MatchEventType.GOAL, side)
+                    val event = MatchEvent(minute, MatchEventType.GOAL, side)
+                    events += event
+                    logger.onTickEvent(tick, event)
                 }
                 roll < saveProbability -> {
                     if (homeAttacks) homeOnTarget++ else awayOnTarget++
-                    events += MatchEvent(minute, MatchEventType.SHOT_SAVED, side)
+                    val event = MatchEvent(minute, MatchEventType.SHOT_SAVED, side)
+                    events += event
+                    logger.onTickEvent(tick, event)
                 }
                 else -> {
-                    events += MatchEvent(minute, MatchEventType.SHOT_MISSED, side)
+                    val event = MatchEvent(minute, MatchEventType.SHOT_MISSED, side)
+                    events += event
+                    logger.onTickEvent(tick, event)
                 }
             }
         }
@@ -88,7 +103,7 @@ class MatchEngine(
             home = TeamStats(homePossession, homeShots, homeOnTarget, homeGoals),
             away = TeamStats(awayPossession, awayShots, awayOnTarget, awayGoals),
         )
-        return MatchResult(
+        val result = MatchResult(
             homeClubId = home.clubId,
             awayClubId = away.clubId,
             homeScore = homeGoals,
@@ -96,6 +111,8 @@ class MatchEngine(
             events = events,
             stats = stats,
         )
+        logger.onMatchEnd(result)
+        return result
     }
 
     companion object {

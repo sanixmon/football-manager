@@ -1,14 +1,12 @@
 package com.footballmanager.mod
 
-import com.footballmanager.model.Attribute
 import com.footballmanager.model.Club
-import com.footballmanager.model.Contract
 import com.footballmanager.model.Game
 import com.footballmanager.model.League
 import com.footballmanager.model.Player
-import com.footballmanager.model.PlayerAttributes
-import com.footballmanager.model.Position
 import com.footballmanager.model.Squad
+import com.footballmanager.repository.InMemoryPlayerRepository
+import com.footballmanager.repository.PlayerRepository
 import com.footballmanager.simulation.Formation
 import com.footballmanager.simulation.Mentality
 import com.footballmanager.simulation.Tactics
@@ -28,29 +26,33 @@ object ModLoader {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    fun loadFromJson(text: String): Game = load(json.decodeFromString(ModFile.serializer(), text))
+    fun loadFromJson(text: String, playerRepository: PlayerRepository = InMemoryPlayerRepository()): Game =
+        load(json.decodeFromString(ModFile.serializer(), text), playerRepository)
 
-    fun loadFromFile(path: String): Game = loadFromJson(File(path).readText())
+    fun loadFromFile(path: String, playerRepository: PlayerRepository = InMemoryPlayerRepository()): Game =
+        loadFromJson(File(path).readText(), playerRepository)
 
-    fun loadFromResource(path: String): Game =
+    fun loadFromResource(path: String, playerRepository: PlayerRepository = InMemoryPlayerRepository()): Game =
         loadFromJson(
             requireNotNull(ModLoader::class.java.classLoader.getResourceAsStream(path)) {
                 "resource not found: $path"
             }.bufferedReader().use { it.readText() },
+            playerRepository,
         )
 
-    fun load(modFile: ModFile): Game {
+    fun load(modFile: ModFile, playerRepository: PlayerRepository = InMemoryPlayerRepository()): Game {
         val leagueId = 1L
         var nextClubId = 1L
         var nextPlayerId = 1L
         val clubs = linkedMapOf<Long, Club>()
-        val players = linkedMapOf<Long, Player>()
+        val playerList = mutableListOf<Player>()
 
         for (modClub in modFile.clubs) {
             val clubId = nextClubId++
             val playerIds = modClub.players.map { modPlayer ->
                 val playerId = nextPlayerId++
-                players[playerId] = toPlayer(modPlayer, playerId)
+                val player = PlayerMapper.toPlayer(modPlayer, playerId)
+                playerList.add(player)
                 playerId
             }
             clubs[clubId] = Club(
@@ -64,36 +66,18 @@ object ModLoader {
             )
         }
 
+        playerRepository.saveAll(playerList)
+        val playersMap = playerList.associateBy { it.id }
+
         val league = League(leagueId, modFile.league.name, clubs.keys.toList())
         return Game(
             name = modFile.name,
             currentDate = LocalDate.parse(modFile.startDate),
             clubs = clubs,
-            players = players,
+            players = playersMap,
             competitions = mapOf(leagueId to league),
         )
     }
-
-    private fun toPlayer(modPlayer: ModPlayer, id: Long): Player = Player(
-        id = id,
-        name = modPlayer.name,
-        age = modPlayer.age,
-        nationality = modPlayer.nationality,
-        naturalPositions = listOf(parsePosition(modPlayer.position)),
-        attributes = PlayerAttributes(
-            modPlayer.attributes.entries.associate { (key, value) -> parseAttribute(key) to value },
-        ),
-        contract = Contract(expiresOn = LocalDate.of(2030, 6, 30)),
-        graphicsId = modPlayer.graphicsId,
-    )
-
-    private fun parsePosition(input: String): Position =
-        Position.entries.firstOrNull { it.name.equals(input, ignoreCase = true) }
-            ?: error("unknown position: '$input'")
-
-    private fun parseAttribute(input: String): Attribute =
-        Attribute.entries.firstOrNull { it.name.equals(input, ignoreCase = true) }
-            ?: error("unknown attribute: '$input'")
 
     private fun parseFormation(input: String): Formation =
         Formation.entries.firstOrNull { it.label.equals(input, ignoreCase = true) }
