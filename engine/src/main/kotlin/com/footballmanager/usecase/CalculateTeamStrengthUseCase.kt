@@ -19,6 +19,10 @@ class CalculateTeamStrengthUseCase(
 ) {
     private val defaultMidRating = 50
 
+    /**
+     * Calculates team strength from an explicit list of 11 starting players.
+     * Note: [starters] must correspond to the positional slots in [Tactics.formation.slots] by index.
+     */
     fun calculateFromStarters(starters: List<Player>, tactics: Tactics = Tactics()): TeamStrength {
         require(starters.size == 11) { "Starting XI must have exactly 11 players (got ${starters.size})" }
         val slots = tactics.formation.slots

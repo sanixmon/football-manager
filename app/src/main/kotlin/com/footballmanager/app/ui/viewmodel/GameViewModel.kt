@@ -35,7 +35,9 @@ class GameViewModel(
 
     init {
         val game = gameRepository.getGame()
-        val league = game.competitions.getValue(SeedData.LEAGUE_ID) as League
+        val league = game.competitions.values.filterIsInstance<League>().firstOrNull()
+            ?: (game.competitions[SeedData.LEAGUE_ID] as? League)
+            ?: error("No League competition found in Game")
         val teams = SeedData.teams(game)
         val season = game.currentSeason ?: runner.start(
             league = league,
@@ -83,7 +85,13 @@ class GameViewModel(
             val updatedSeason = state.currentSeason.setTactics(state.humanClubId, newTactics)
             val newLineup = selectLineupUseCase(state.humanSquad, newTactics)
             val finalSeason = updatedSeason.setLineup(state.humanClubId, newLineup)
-            state.copy(currentSeason = finalSeason, selectedStarterPlayerId = null)
+            val updatedGame = state.game.copy(currentSeason = finalSeason)
+            gameRepository.saveGame(updatedGame)
+            state.copy(
+                game = updatedGame,
+                currentSeason = finalSeason,
+                selectedStarterPlayerId = null,
+            )
         }
     }
 
@@ -91,7 +99,12 @@ class GameViewModel(
         _uiState.update { state ->
             val newTactics = state.humanTeam.tactics.copy(mentality = mentality)
             val updatedSeason = state.currentSeason.setTactics(state.humanClubId, newTactics)
-            state.copy(currentSeason = updatedSeason)
+            val updatedGame = state.game.copy(currentSeason = updatedSeason)
+            gameRepository.saveGame(updatedGame)
+            state.copy(
+                game = updatedGame,
+                currentSeason = updatedSeason,
+            )
         }
     }
 
@@ -99,7 +112,13 @@ class GameViewModel(
         _uiState.update { state ->
             val newLineup = selectLineupUseCase(state.humanSquad, state.humanTeam.tactics)
             val updatedSeason = state.currentSeason.setLineup(state.humanClubId, newLineup)
-            state.copy(currentSeason = updatedSeason, selectedStarterPlayerId = null)
+            val updatedGame = state.game.copy(currentSeason = updatedSeason)
+            gameRepository.saveGame(updatedGame)
+            state.copy(
+                game = updatedGame,
+                currentSeason = updatedSeason,
+                selectedStarterPlayerId = null,
+            )
         }
     }
 
@@ -118,7 +137,13 @@ class GameViewModel(
             val newSubs = currentLineup.substitutes.map { if (it == benchPlayerId) starterId else it }
             val newLineup = Lineup(starters = newStarters, substitutes = newSubs)
             val updatedSeason = state.currentSeason.setLineup(state.humanClubId, newLineup)
-            state.copy(currentSeason = updatedSeason, selectedStarterPlayerId = null)
+            val updatedGame = state.game.copy(currentSeason = updatedSeason)
+            gameRepository.saveGame(updatedGame)
+            state.copy(
+                game = updatedGame,
+                currentSeason = updatedSeason,
+                selectedStarterPlayerId = null,
+            )
         }
     }
 

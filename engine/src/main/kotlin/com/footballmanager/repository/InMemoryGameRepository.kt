@@ -1,18 +1,20 @@
 package com.footballmanager.repository
 
 import com.footballmanager.model.Game
+import java.util.concurrent.atomic.AtomicReference
 
 class InMemoryGameRepository(
-    private var currentGame: Game,
+    initialGame: Game,
 ) : GameRepository {
+    private val currentGame = AtomicReference(initialGame)
 
     override fun exists(): Boolean = true
 
-    override fun getGame(): Game = currentGame
+    override fun getGame(): Game = currentGame.get()
 
-    override fun reload(): Game = currentGame
+    override fun reload(): Game = currentGame.get()
 
     override fun saveGame(game: Game) {
-        this.currentGame = game
+        currentGame.set(game)
     }
 }

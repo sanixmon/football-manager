@@ -54,4 +54,19 @@ class GameViewModelTest {
         val updatedStarter = vm.uiState.value.currentSeason.players.getValue(starterId)
         assertEquals(initialFitness - 12, updatedStarter.fitness)
     }
+
+    @Test
+    fun `tactical and lineup changes are persisted to repository immediately`() {
+        val repo = com.footballmanager.repository.InMemoryGameRepository(com.footballmanager.seed.SeedData.game())
+        val vm = GameViewModel(gameRepository = repo)
+
+        vm.updateFormation(Formation.FIVE_THREE_TWO)
+        val savedGame = repo.getGame()
+        val savedTactics = savedGame.currentSeason?.tactics?.get(1L)
+        assertEquals(Formation.FIVE_THREE_TWO, savedTactics?.formation)
+
+        vm.updateMentality(Mentality.VERY_ATTACKING)
+        val savedMentality = repo.getGame().currentSeason?.tactics?.get(1L)?.mentality
+        assertEquals(Mentality.VERY_ATTACKING, savedMentality)
+    }
 }
