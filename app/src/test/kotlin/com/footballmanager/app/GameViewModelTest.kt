@@ -62,11 +62,11 @@ class GameViewModelTest {
 
         vm.updateFormation(Formation.FIVE_THREE_TWO)
         val savedGame = repo.getGame()
-        val savedTactics = savedGame.currentSeason?.tactics?.get(1L)
+        val savedTactics = savedGame.currentSeason?.teams?.firstOrNull { it.clubId == 1L }?.tactics
         assertEquals(Formation.FIVE_THREE_TWO, savedTactics?.formation)
 
-        vm.updateMentality(Mentality.VERY_ATTACKING)
-        val savedMentality = repo.getGame().currentSeason?.tactics?.get(1L)?.mentality
-        assertEquals(Mentality.VERY_ATTACKING, savedMentality)
+        vm.updateMentality(Mentality.ATTACKING)
+        val savedMentality = repo.getGame().currentSeason?.teams?.firstOrNull { it.clubId == 1L }?.tactics?.mentality
+        assertEquals(Mentality.ATTACKING, savedMentality)
     }
 }
