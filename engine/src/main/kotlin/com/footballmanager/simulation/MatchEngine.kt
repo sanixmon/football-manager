@@ -2,6 +2,7 @@ package com.footballmanager.simulation
 
 import com.footballmanager.logging.MatchLogger
 import com.footballmanager.logging.NoOpMatchLogger
+import kotlin.random.Random
 
 /**
  * A simple, deterministic, tick-based football match engine.
@@ -23,7 +24,7 @@ class MatchEngine(
 ) {
 
     /** Seeded convenience constructor. */
-    constructor(seed: Long, logger: MatchLogger = NoOpMatchLogger) : this(KotlinRandomSource(java.util.Random(seed)), logger)
+    constructor(seed: Long, logger: MatchLogger = NoOpMatchLogger) : this(KotlinRandomSource(Random(seed)), logger)
 
     fun simulate(home: Team, away: Team): MatchResult {
         require(home.clubId != away.clubId) { "home and away must be different clubs" }
