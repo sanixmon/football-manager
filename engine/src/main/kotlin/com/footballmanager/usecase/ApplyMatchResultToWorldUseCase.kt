@@ -34,11 +34,16 @@ class ApplyMatchResultToWorldUseCase {
         }
 
         // 2. Identify lineups
-        val homeLineup = season.lineups[homeClubId]
-        val awayLineup = season.lineups[awayClubId]
+        val homeSquad = season.clubs[homeClubId]?.squad?.playerIds?.mapNotNull { season.players[it] } ?: emptyList()
+        val awaySquad = season.clubs[awayClubId]?.squad?.playerIds?.mapNotNull { season.players[it] } ?: emptyList()
 
-        val homeStarters = homeLineup?.starters ?: emptyList()
-        val awayStarters = awayLineup?.starters ?: emptyList()
+        val homeLineup = season.lineups[homeClubId]
+            ?: if (homeSquad.isNotEmpty()) com.footballmanager.simulation.Lineup.autoSelect(homeSquad, season.teams.firstOrNull { it.clubId == homeClubId }?.tactics ?: com.footballmanager.simulation.Tactics()) else null
+        val awayLineup = season.lineups[awayClubId]
+            ?: if (awaySquad.isNotEmpty()) com.footballmanager.simulation.Lineup.autoSelect(awaySquad, season.teams.firstOrNull { it.clubId == awayClubId }?.tactics ?: com.footballmanager.simulation.Tactics()) else null
+
+        val homeStarters = homeLineup?.starters ?: homeSquad.take(11).map { it.id }
+        val awayStarters = awayLineup?.starters ?: awaySquad.take(11).map { it.id }
 
         val updatedPlayers = season.players.toMutableMap()
         val updatedStats = season.playerStats.toMutableMap()

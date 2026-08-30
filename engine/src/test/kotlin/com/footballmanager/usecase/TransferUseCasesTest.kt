@@ -58,7 +58,7 @@ class TransferUseCasesTest {
             buyingClub = buyer,
             player = player,
             sellingClubId = seller.id,
-            feeOffered = 4_000_000L,
+            feeOffered = 8_000_000L,
             currentDate = date,
         )
         assertEquals(BidStatus.PENDING, bid.status)
@@ -98,16 +98,16 @@ class TransferUseCasesTest {
         )
 
         // Verifications
-        assertEquals(6_000_000L, result.updatedBuyer.finance.transferBudget)
+        assertEquals(2_000_000L, result.updatedBuyer.finance.transferBudget)
         assertTrue(101L in result.updatedBuyer.squad.playerIds)
 
         assertNotNull(result.updatedSeller)
-        assertEquals(2_000_000L + (4_000_000L * 8 / 10), result.updatedSeller.finance.transferBudget)
+        assertEquals(2_000_000L + (8_000_000L * 8 / 10), result.updatedSeller.finance.transferBudget)
         assertTrue(101L !in result.updatedSeller.squad.playerIds)
 
         assertEquals(8000L, result.updatedPlayer.contract.weeklyWage)
         assertEquals(SquadStatus.FIRST_TEAM, result.updatedPlayer.contract.squadStatus)
         assertEquals(BidStatus.COMPLETED, result.completedBid.status)
-        assertEquals(4_000_000L, result.record.fee)
+        assertEquals(8_000_000L, result.record.fee)
     }
 }

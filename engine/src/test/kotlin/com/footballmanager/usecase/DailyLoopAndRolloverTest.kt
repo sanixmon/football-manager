@@ -33,7 +33,7 @@ class DailyLoopAndRolloverTest {
             boardObjectives = mapOf(1L to BoardObjectives(clubId = 1L, targetLeaguePosition = 1)),
         )
 
-        val homeStarter = initialSeason.lineups[1L]?.starters?.first() ?: 1L
+        val homeStarter = initialSeason.clubs[1L]?.squad?.playerIds?.first() ?: 1L
 
         val dummyResult = MatchResult(
             homeClubId = 1L,
