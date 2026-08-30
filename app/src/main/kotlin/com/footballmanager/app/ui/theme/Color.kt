@@ -17,6 +17,7 @@ val FmFooterBg = Color(0xFF121418)
 val FmAccentBlue = Color(0xFF0057FF)
 val FmAccentCyan = Color(0xFF00D2FF)
 val FmContinueGreen = Color(0xFF10B981)
+val FmPrimaryGreen = Color(0xFF10B981)
 val FmContinueGreenPressed = Color(0xFF059669)
 
 // Typography Colors

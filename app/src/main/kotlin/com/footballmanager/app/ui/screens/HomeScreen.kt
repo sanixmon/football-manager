@@ -46,6 +46,7 @@ import com.footballmanager.app.ui.theme.FmRatingLow
 import com.footballmanager.app.ui.theme.FmRatingMed
 import com.footballmanager.app.ui.theme.FmSurface
 import com.footballmanager.app.ui.theme.FmSurfaceAlt
+import com.footballmanager.app.ui.theme.FmSurfaceSelected
 import com.footballmanager.app.ui.theme.FmTextMuted
 import com.footballmanager.app.ui.theme.FmTextPrimary
 import com.footballmanager.app.ui.theme.FmTextSecondary
