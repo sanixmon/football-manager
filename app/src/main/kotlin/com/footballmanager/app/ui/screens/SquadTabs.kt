@@ -3,6 +3,7 @@ package com.footballmanager.app.ui.screens
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -316,7 +317,6 @@ private fun DynamicsStatCard(label: String, value: Int, modifier: Modifier = Mod
 }
 
 // ── Stats Tab: Attribute category summary per player ─────────────────────────
-@OptIn(ExperimentalFoundationApi::class)
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SquadStatsTab(

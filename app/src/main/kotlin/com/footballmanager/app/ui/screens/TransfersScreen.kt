@@ -2,6 +2,7 @@ package com.footballmanager.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,8 +43,8 @@ import com.footballmanager.app.ui.components.ContractOfferDialog
 import com.footballmanager.app.ui.theme.FmAccentBlue
 import com.footballmanager.app.ui.theme.FmBorder
 import com.footballmanager.app.ui.theme.FmCardBg
+import com.footballmanager.app.ui.theme.FmContinueGreen
 import com.footballmanager.app.ui.theme.FmDarkBg
-import com.footballmanager.app.ui.theme.FmPrimaryGreen
 import com.footballmanager.app.ui.theme.FmSurface
 import com.footballmanager.app.ui.theme.FmTextMuted
 import com.footballmanager.app.ui.theme.FmTextPrimary
@@ -144,7 +145,7 @@ fun TransfersScreen(
                                     text = "Offered Fee: $${"%,d".format(bid.feeOffered)} · Status: ${bid.status.name}",
                                     fontSize = 12.sp,
                                     color = when (bid.status) {
-                                        BidStatus.ACCEPTED_BY_CLUB, BidStatus.ACCEPTED_BY_PLAYER -> FmPrimaryGreen
+                                        BidStatus.ACCEPTED_BY_CLUB, BidStatus.ACCEPTED_BY_PLAYER -> FmContinueGreen
                                         BidStatus.REJECTED_BY_CLUB, BidStatus.REJECTED_BY_PLAYER -> Color(0xFFEF4444)
                                         else -> FmAccentBlue
                                     },
@@ -169,11 +170,11 @@ fun TransfersScreen(
                                     BidStatus.ACCEPTED_BY_PLAYER -> {
                                         Button(
                                             onClick = { onCompleteDeal(bid.id) },
-                                            colors = ButtonDefaults.buttonColors(containerColor = FmPrimaryGreen),
+                                            colors = ButtonDefaults.buttonColors(containerColor = FmContinueGreen),
                                             shape = RoundedCornerShape(4.dp),
                                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                                         ) {
-                                            Text("Complete Sign", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            Text("Complete Sign", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                                         }
                                     }
                                     else -> {}
@@ -225,7 +226,7 @@ fun TransfersScreen(
                                 Text(record.playerName, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = FmTextPrimary)
                                 Text("$fromClub → $toClub", fontSize = 11.sp, color = FmTextSecondary)
                             }
-                            Text("$${"%,d".format(record.fee)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = FmPrimaryGreen)
+                            Text("$${"%,d".format(record.fee)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = FmContinueGreen)
                         }
                     }
                 }

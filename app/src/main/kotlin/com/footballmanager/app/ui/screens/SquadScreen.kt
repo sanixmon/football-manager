@@ -22,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.footballmanager.app.ui.components.FmFooterBar
 import com.footballmanager.app.ui.components.FmNavSection
@@ -33,6 +34,7 @@ import com.footballmanager.app.ui.components.FmTabRow
 import com.footballmanager.app.ui.components.FmTopAppBar
 import com.footballmanager.app.ui.components.PlayerDetailBottomSheet
 import com.footballmanager.app.ui.components.PlayerDetailContent
+import com.footballmanager.app.ui.theme.FmContinueGreen
 import com.footballmanager.app.ui.theme.FmDarkBg
 import com.footballmanager.app.ui.viewmodel.GameUiState
 import com.footballmanager.model.Player
@@ -82,6 +84,7 @@ fun SquadScreen(
 
         @Composable
         fun MainContent() {
+            Column(modifier = Modifier.fillMaxSize()) {
                 val isMatchToday = state.isMatchdayToday
                 val isSeasonFinished = state.currentSeason.isFinished
                 val buttonText = when {
