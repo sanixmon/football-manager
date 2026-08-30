@@ -52,8 +52,16 @@ class GameViewModel(
         } else {
             game
         }
+        val lastResult = season.results.lastOrNull {
+            it.homeClubId == 1L || it.awayClubId == 1L
+        }
         _uiState = MutableStateFlow(
-            GameUiState(game = initialGame, currentSeason = season, humanClubId = 1L),
+            GameUiState(
+                game = initialGame,
+                currentSeason = season,
+                humanClubId = 1L,
+                lastMatchResult = lastResult,
+            ),
         )
     }
 
