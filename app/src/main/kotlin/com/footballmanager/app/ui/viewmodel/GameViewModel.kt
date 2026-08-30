@@ -14,10 +14,13 @@ import com.footballmanager.simulation.Mentality
 import com.footballmanager.simulation.season.SeasonRunner
 import com.footballmanager.model.SquadStatus
 import com.footballmanager.model.ContractOffer
+import com.footballmanager.usecase.AdvanceDayUseCase
+import com.footballmanager.usecase.ApplyMatchResultToWorldUseCase
 import com.footballmanager.usecase.CalculateTeamStrengthUseCase
 import com.footballmanager.usecase.CompleteTransferUseCase
 import com.footballmanager.usecase.EvaluateTransferOfferUseCase
 import com.footballmanager.usecase.NegotiateContractUseCase
+import com.footballmanager.usecase.SeasonRolloverUseCase
 import com.footballmanager.usecase.SelectLineupUseCase
 import com.footballmanager.usecase.SubmitTransferBidUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +36,9 @@ class GameViewModel(
     private val evaluateTransferOfferUseCase: EvaluateTransferOfferUseCase = EvaluateTransferOfferUseCase(),
     private val negotiateContractUseCase: NegotiateContractUseCase = NegotiateContractUseCase(),
     private val completeTransferUseCase: CompleteTransferUseCase = CompleteTransferUseCase(),
+    private val applyMatchResultToWorldUseCase: ApplyMatchResultToWorldUseCase = ApplyMatchResultToWorldUseCase(),
+    private val advanceDayUseCase: AdvanceDayUseCase = AdvanceDayUseCase(),
+    private val seasonRolloverUseCase: SeasonRolloverUseCase = SeasonRolloverUseCase(),
 ) : ViewModel() {
 
     /** Backward-compatible convenience constructor. */
@@ -162,15 +168,57 @@ class GameViewModel(
         }
     }
 
-    // ── Matchday ──────────────────────────────────────────────────────────
+    // ── Matchday & Calendar Progression ──────────────────────────────────
     fun playNextMatchday() {
         _uiState.update { state ->
             if (state.currentSeason.isFinished) return@update state
+            val prevIndex = state.currentSeason.nextFixtureIndex
             val nextSeason = runner.playNextMatchday(state.currentSeason)
-            val userMatchResult = nextSeason.results.lastOrNull {
+            val newlyPlayedResults = nextSeason.results.subList(prevIndex, nextSeason.nextFixtureIndex)
+
+            var worldSeason = nextSeason
+            for (res in newlyPlayedResults) {
+                worldSeason = applyMatchResultToWorldUseCase.execute(worldSeason, res)
+            }
+
+            val userMatchResult = worldSeason.results.lastOrNull {
                 it.homeClubId == state.humanClubId || it.awayClubId == state.humanClubId
             }
             val updatedGame = state.game.copy(
+                clubs = worldSeason.clubs,
+                players = worldSeason.players,
+                currentSeason = worldSeason,
+                currentDate = worldSeason.currentDate,
+            )
+            gameRepository.saveGame(updatedGame)
+            state.copy(
+                game = updatedGame,
+                currentSeason = worldSeason,
+                lastMatchResult = userMatchResult,
+                selectedStarterPlayerId = null,
+            )
+        }
+    }
+
+    fun advanceDay() {
+        _uiState.update { state ->
+            val updatedSeason = advanceDayUseCase.execute(state.currentSeason)
+            val updatedGame = state.game.copy(
+                players = updatedSeason.players,
+                currentSeason = updatedSeason,
+                currentDate = updatedSeason.currentDate,
+            )
+            gameRepository.saveGame(updatedGame)
+            state.copy(game = updatedGame, currentSeason = updatedSeason)
+        }
+    }
+
+    fun rolloverToNextSeason() {
+        _uiState.update { state ->
+            if (!state.currentSeason.isFinished) return@update state
+            val nextSeason = seasonRolloverUseCase.execute(state.currentSeason)
+            val updatedGame = state.game.copy(
+                clubs = nextSeason.clubs,
                 players = nextSeason.players,
                 currentSeason = nextSeason,
                 currentDate = nextSeason.currentDate,
@@ -179,7 +227,7 @@ class GameViewModel(
             state.copy(
                 game = updatedGame,
                 currentSeason = nextSeason,
-                lastMatchResult = userMatchResult,
+                lastMatchResult = null,
                 selectedStarterPlayerId = null,
             )
         }

@@ -26,6 +26,9 @@ interface AppContainer {
     val evaluateTransferOfferUseCase: com.footballmanager.usecase.EvaluateTransferOfferUseCase
     val negotiateContractUseCase: com.footballmanager.usecase.NegotiateContractUseCase
     val completeTransferUseCase: com.footballmanager.usecase.CompleteTransferUseCase
+    val applyMatchResultToWorldUseCase: com.footballmanager.usecase.ApplyMatchResultToWorldUseCase
+    val advanceDayUseCase: com.footballmanager.usecase.AdvanceDayUseCase
+    val seasonRolloverUseCase: com.footballmanager.usecase.SeasonRolloverUseCase
     val seasonRunner: SeasonRunner
     val gameViewModelFactory: ViewModelProvider.Factory
 }
@@ -75,6 +78,18 @@ class DefaultAppContainer(
         com.footballmanager.usecase.CompleteTransferUseCase()
     }
 
+    override val applyMatchResultToWorldUseCase: com.footballmanager.usecase.ApplyMatchResultToWorldUseCase by lazy {
+        com.footballmanager.usecase.ApplyMatchResultToWorldUseCase()
+    }
+
+    override val advanceDayUseCase: com.footballmanager.usecase.AdvanceDayUseCase by lazy {
+        com.footballmanager.usecase.AdvanceDayUseCase()
+    }
+
+    override val seasonRolloverUseCase: com.footballmanager.usecase.SeasonRolloverUseCase by lazy {
+        com.footballmanager.usecase.SeasonRolloverUseCase()
+    }
+
     override val seasonRunner: SeasonRunner by lazy {
         SeasonRunner()
     }
@@ -91,6 +106,9 @@ class DefaultAppContainer(
                     evaluateTransferOfferUseCase = evaluateTransferOfferUseCase,
                     negotiateContractUseCase = negotiateContractUseCase,
                     completeTransferUseCase = completeTransferUseCase,
+                    applyMatchResultToWorldUseCase = applyMatchResultToWorldUseCase,
+                    advanceDayUseCase = advanceDayUseCase,
+                    seasonRolloverUseCase = seasonRolloverUseCase,
                 ) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")

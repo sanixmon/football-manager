@@ -55,6 +55,7 @@ fun SquadScreen(
     onOfferContract: (bidId: Long, weeklyWage: Long, years: Int, squadStatus: com.footballmanager.model.SquadStatus) -> Unit = { _, _, _, _ -> },
     onCompleteDeal: (bidId: Long) -> Unit = {},
     onCancelDeal: (bidId: Long) -> Unit = {},
+    onRolloverSeason: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var selectedPlayer by remember { mutableStateOf<Player?>(null) }
@@ -137,6 +138,7 @@ fun SquadScreen(
                             FmSquadTab.DYNAMICS -> SquadDynamicsTab(players = squad)
                             FmSquadTab.STATS -> SquadStatsTab(
                                 players = squad,
+                                playerStats = state.currentSeason.playerStats,
                                 selectedPlayerId = selectedPlayer?.id,
                                 onPlayerClick = { selectedPlayer = it },
                             )
@@ -171,6 +173,7 @@ fun SquadScreen(
                         FmNavSection.HOME -> HomeScreen(
                             state = state,
                             onNavigateToMatchday = { onNavSection(FmNavSection.SCHEDULE) },
+                            onRolloverSeason = onRolloverSeason,
                             modifier = bodyModifier,
                         )
 

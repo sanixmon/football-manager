@@ -36,6 +36,9 @@ data class SeasonState(
     val lineups: Map<Long, Lineup> = emptyMap(),
     val activeBids: List<com.footballmanager.model.TransferBid> = emptyList(),
     val transferHistory: List<com.footballmanager.model.TransferRecord> = emptyList(),
+    val playerStats: Map<Long, com.footballmanager.model.PlayerSeasonStats> = emptyMap(),
+    val boardObjectives: Map<Long, com.footballmanager.model.BoardObjectives> = emptyMap(),
+    val managerProfile: com.footballmanager.model.ManagerProfile? = null,
 ) {
     init {
         require(nextFixtureIndex in 0..fixtures.size) { "nextFixtureIndex out of range" }

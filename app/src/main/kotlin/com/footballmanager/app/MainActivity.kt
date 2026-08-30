@@ -51,6 +51,7 @@ class MainActivity : ComponentActivity() {
                     onOfferContract = viewModel::offerContractTerms,
                     onCompleteDeal = viewModel::completeTransferDeal,
                     onCancelDeal = viewModel::cancelTransferDeal,
+                    onRolloverSeason = viewModel::rolloverToNextSeason,
                     modifier = Modifier.fillMaxSize(),
                 )
             }

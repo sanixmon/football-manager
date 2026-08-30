@@ -317,16 +317,14 @@ private fun DynamicsStatCard(label: String, value: Int, modifier: Modifier = Mod
 
 // ── Stats Tab: Attribute category summary per player ─────────────────────────
 @OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SquadStatsTab(
     players: List<Player>,
+    playerStats: Map<Long, com.footballmanager.model.PlayerSeasonStats> = emptyMap(),
     selectedPlayerId: Long?,
     onPlayerClick: (Player) -> Unit,
 ) {
-    val categories = listOf("Technical" to listOf("PASSING", "DRIBBLING", "FINISHING", "TACKLING"),
-                            "Physical"  to listOf("PACE", "STAMINA", "STRENGTH", "AGILITY"),
-                            "Mental"    to listOf("COMPOSURE", "POSITIONING", "VISION", "DECISION_MAKING"))
-
     LazyColumn(modifier = Modifier.fillMaxSize().background(FmDarkBg)) {
         stickyHeader {
             Row(
@@ -339,32 +337,31 @@ fun SquadStatsTab(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text("PLAYER", style = MaterialTheme.typography.labelSmall, color = FmTextSecondary, fontSize = 10.sp, modifier = Modifier.weight(2f))
-                Text("TEC", style = MaterialTheme.typography.labelSmall, color = FmTextSecondary, fontSize = 10.sp, textAlign = TextAlign.Center, modifier = Modifier.width(40.dp))
-                Text("PHY", style = MaterialTheme.typography.labelSmall, color = FmTextSecondary, fontSize = 10.sp, textAlign = TextAlign.Center, modifier = Modifier.width(40.dp))
-                Text("MEN", style = MaterialTheme.typography.labelSmall, color = FmTextSecondary, fontSize = 10.sp, textAlign = TextAlign.Center, modifier = Modifier.width(40.dp))
-                Text("OVR", style = MaterialTheme.typography.labelSmall, color = FmTextSecondary, fontSize = 10.sp, textAlign = TextAlign.Center, modifier = Modifier.width(44.dp))
+                Text("APPS", style = MaterialTheme.typography.labelSmall, color = FmTextSecondary, fontSize = 10.sp, textAlign = TextAlign.Center, modifier = Modifier.width(36.dp))
+                Text("GLS", style = MaterialTheme.typography.labelSmall, color = FmTextSecondary, fontSize = 10.sp, textAlign = TextAlign.Center, modifier = Modifier.width(36.dp))
+                Text("AST", style = MaterialTheme.typography.labelSmall, color = FmTextSecondary, fontSize = 10.sp, textAlign = TextAlign.Center, modifier = Modifier.width(36.dp))
+                Text("AV.R", style = MaterialTheme.typography.labelSmall, color = FmTextSecondary, fontSize = 10.sp, textAlign = TextAlign.Center, modifier = Modifier.width(44.dp))
             }
         }
-        itemsIndexed(players.sortedByDescending { it.bestOverall() }) { index, player ->
+        itemsIndexed(players.sortedByDescending { (playerStats[it.id]?.goals ?: 0) * 100 + (playerStats[it.id]?.appearances ?: 0) }) { index, player ->
             val isSelected = player.id == selectedPlayerId
             val bg = when {
                 isSelected -> FmSurfaceSelected
                 index % 2 == 0 -> FmSurface
                 else -> FmSurfaceAlt
             }
-
-            // Compute category averages from attributes map
-            val attrMap = player.attributes.toMap()
-            val tecAvg = attrMap.entries.filter { it.key.name in listOf("PASSING","DRIBBLING","FINISHING","TACKLING","CROSSING","FIRST_TOUCH") }.map { it.value }.average().toInt()
-            val phyAvg = attrMap.entries.filter { it.key.name in listOf("PACE","STAMINA","STRENGTH","AGILITY","ACCELERATION") }.map { it.value }.average().toInt()
-            val menAvg = attrMap.entries.filter { it.key.name in listOf("COMPOSURE","POSITIONING","VISION","DECISION_MAKING","WORK_RATE","LEADERSHIP") }.map { it.value }.average().toInt()
-            val overall = player.bestOverall()
+            val stat = playerStats[player.id]
+            val apps = stat?.appearances ?: 0
+            val goals = stat?.goals ?: 0
+            val assists = stat?.assists ?: 0
+            val avgRating = stat?.averageRating ?: 0.0
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(42.dp)
                     .background(bg)
+                    .clickable { onPlayerClick(player) }
                     .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -375,15 +372,14 @@ fun SquadStatsTab(
                     )
                     Text(player.bestPosition().name, style = MaterialTheme.typography.bodySmall, color = FmTextMuted, fontSize = 10.sp)
                 }
-                CategoryStatBox(tecAvg, Modifier.width(40.dp))
-                CategoryStatBox(phyAvg, Modifier.width(40.dp))
-                CategoryStatBox(menAvg, Modifier.width(40.dp))
-                // Overall
+                Text("$apps", style = MaterialTheme.typography.bodySmall, color = FmTextPrimary, fontSize = 11.sp, textAlign = TextAlign.Center, modifier = Modifier.width(36.dp))
+                Text("$goals", style = MaterialTheme.typography.bodySmall, color = if (goals > 0) FmRatingHigh else FmTextSecondary, fontSize = 11.sp, fontWeight = if (goals > 0) FontWeight.Bold else FontWeight.Normal, textAlign = TextAlign.Center, modifier = Modifier.width(36.dp))
+                Text("$assists", style = MaterialTheme.typography.bodySmall, color = if (assists > 0) FmAccentCyan else FmTextSecondary, fontSize = 11.sp, textAlign = TextAlign.Center, modifier = Modifier.width(36.dp))
+                // Average Rating
                 Box(modifier = Modifier.width(44.dp), contentAlignment = Alignment.Center) {
-                    val ovrColor = if (overall >= 70) FmRatingHigh else if (overall >= 60) FmRatingMed else FmRatingLow
-                    Box(modifier = Modifier.size(28.dp).clip(CircleShape).background(ovrColor), contentAlignment = Alignment.Center) {
-                        Text("$overall", color = Color.Black, fontWeight = FontWeight.Black, fontSize = 12.sp)
-                    }
+                    val ratingText = if (apps > 0) String.format("%.2f", avgRating) else "—"
+                    val ratingColor = if (avgRating >= 7.0) FmRatingHigh else if (avgRating >= 6.5) FmRatingMed else FmTextSecondary
+                    Text(ratingText, color = ratingColor, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                 }
             }
             HorizontalDivider(color = FmBorder.copy(alpha = 0.4f), thickness = 0.5.dp)

@@ -55,6 +55,7 @@ import com.footballmanager.app.ui.viewmodel.GameUiState
 fun HomeScreen(
     state: GameUiState,
     onNavigateToMatchday: () -> Unit,
+    onRolloverSeason: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val club = state.humanClub
@@ -173,14 +174,32 @@ fun HomeScreen(
                 Text("Tap CONTINUE in the top bar to simulate this match.", style = MaterialTheme.typography.bodySmall, color = FmTextMuted, fontSize = 11.sp)
             }
         } else if (season.isFinished) {
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(FmRatingHigh.copy(alpha = 0.15f))
                     .border(1.dp, FmRatingHigh, RoundedCornerShape(0.dp))
                     .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text("SEASON COMPLETE — Final Position: #$myPosition", style = MaterialTheme.typography.titleMedium, color = FmRatingHigh, fontWeight = FontWeight.Bold)
+                Text(
+                    "SEASON COMPLETE — Final Position: #$myPosition",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = FmRatingHigh,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    "Prize money distributed, young players promoted from academy. Advance to next year's campaign.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = FmTextPrimary,
+                )
+                androidx.compose.material3.Button(
+                    onClick = onRolloverSeason,
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = FmContinueGreen),
+                    shape = RoundedCornerShape(6.dp),
+                ) {
+                    Text("START NEXT SEASON >", fontWeight = FontWeight.Bold)
+                }
             }
         }
 
