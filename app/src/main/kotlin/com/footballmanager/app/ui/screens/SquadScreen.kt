@@ -56,6 +56,7 @@ fun SquadScreen(
     onCompleteDeal: (bidId: Long) -> Unit = {},
     onCancelDeal: (bidId: Long) -> Unit = {},
     onRolloverSeason: () -> Unit = {},
+    onMainMenuClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var selectedPlayer by remember { mutableStateOf<Player?>(null) }
@@ -250,6 +251,10 @@ fun SquadScreen(
                         onSectionSelected = { section ->
                             onNavSection(section)
                             coroutineScope.launch { drawerState.close() }
+                        },
+                        onMainMenuClick = {
+                            coroutineScope.launch { drawerState.close() }
+                            onMainMenuClick()
                         },
                     )
                 },

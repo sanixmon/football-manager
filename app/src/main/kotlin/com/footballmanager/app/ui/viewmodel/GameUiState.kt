@@ -10,16 +10,23 @@ import com.footballmanager.simulation.MatchResult
 import com.footballmanager.simulation.Team
 import com.footballmanager.simulation.season.SeasonState
 
+enum class AppScreen {
+    MAIN_MENU,
+    NEW_GAME_WIZARD,
+    IN_GAME,
+}
+
 data class GameUiState(
     val game: Game,
     val currentSeason: SeasonState,
+    val currentScreen: AppScreen = AppScreen.MAIN_MENU,
     val humanClubId: Long = 1L,
     val selectedStarterPlayerId: Long? = null,
     val isSimulating: Boolean = false,
     val currentSimTick: Int = 0,
     val lastMatchResult: MatchResult? = null,
     // Navigation
-    val activeNavSection: FmNavSection = FmNavSection.SQUAD,
+    val activeNavSection: FmNavSection = FmNavSection.HOME,
     val activeSquadTab: FmSquadTab = FmSquadTab.OVERVIEW,
 ) {
     val humanClub: Club get() = game.club(humanClubId)

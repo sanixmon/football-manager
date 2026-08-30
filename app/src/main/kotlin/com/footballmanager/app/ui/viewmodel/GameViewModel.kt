@@ -90,6 +90,48 @@ class GameViewModel(
 
     val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
 
+    // ── App Screen Navigation & Career Management ─────────────────────────
+    fun goToAppScreen(screen: AppScreen) {
+        _uiState.update { it.copy(currentScreen = screen) }
+    }
+
+    fun startNewCareer(managerName: String, nationality: String, clubId: Long) {
+        val freshGame = SeedData.game()
+        val league = freshGame.competitions.values.filterIsInstance<League>().firstOrNull()
+            ?: (freshGame.competitions[SeedData.LEAGUE_ID] as? League)
+            ?: error("No League competition found in Game")
+        val teams = SeedData.teams(freshGame)
+        val initialSeason = runner.start(
+            league = league,
+            teams = teams,
+            startDate = freshGame.currentDate,
+            humanClubId = clubId,
+            clubs = freshGame.clubs,
+            players = freshGame.players,
+        ).copy(
+            managerProfile = com.footballmanager.model.ManagerProfile(
+                name = managerName,
+                nationality = nationality,
+                clubId = clubId,
+            ),
+            boardObjectives = mapOf(clubId to com.footballmanager.model.BoardObjectives(clubId = clubId, targetLeaguePosition = 4)),
+        )
+
+        val updatedGame = freshGame.copy(currentSeason = initialSeason)
+        gameRepository.saveGame(updatedGame)
+        _uiState.update {
+            it.copy(
+                game = updatedGame,
+                currentSeason = initialSeason,
+                humanClubId = clubId,
+                currentScreen = AppScreen.IN_GAME,
+                activeNavSection = FmNavSection.HOME,
+                lastMatchResult = null,
+                selectedStarterPlayerId = null,
+            )
+        }
+    }
+
     // ── Navigation ────────────────────────────────────────────────────────
     fun navigateTo(section: FmNavSection) {
         _uiState.update { it.copy(activeNavSection = section) }

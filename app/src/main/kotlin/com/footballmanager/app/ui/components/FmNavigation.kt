@@ -82,6 +82,7 @@ enum class FmNavSection(
 fun FmNavigationDrawerContent(
     currentSection: FmNavSection,
     onSectionSelected: (FmNavSection) -> Unit,
+    onMainMenuClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
@@ -132,6 +133,21 @@ fun FmNavigationDrawerContent(
                     onClick = { onSectionSelected(section) },
                 )
             }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        HorizontalDivider(color = FmBorder, thickness = 1.dp)
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(40.dp)
+                .clickable { onMainMenuClick() }
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Icon(Icons.Outlined.Home, contentDescription = null, tint = FmTextMuted, modifier = Modifier.size(18.dp))
+            Text("Main Menu", style = MaterialTheme.typography.bodySmall, color = FmTextMuted, fontSize = 12.sp)
         }
         Spacer(modifier = Modifier.height(16.dp))
     }

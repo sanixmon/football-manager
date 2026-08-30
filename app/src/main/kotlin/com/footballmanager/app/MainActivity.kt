@@ -37,23 +37,48 @@ class MainActivity : ComponentActivity() {
             FootballManagerTheme {
                 val state by viewModel.uiState.collectAsState()
 
-                SquadScreen(
-                    state = state,
-                    onContinueClick = viewModel::playNextMatchday,
-                    onNavSection = viewModel::navigateTo,
-                    onTabSelected = viewModel::selectSquadTab,
-                    onFormationSelected = viewModel::updateFormation,
-                    onMentalitySelected = viewModel::updateMentality,
-                    onAutoSelect = viewModel::autoSelectBestXI,
-                    onStarterClick = viewModel::onStarterSelected,
-                    onBenchClick = viewModel::swapWithBench,
-                    onSubmitBid = viewModel::submitTransferBid,
-                    onOfferContract = viewModel::offerContractTerms,
-                    onCompleteDeal = viewModel::completeTransferDeal,
-                    onCancelDeal = viewModel::cancelTransferDeal,
-                    onRolloverSeason = viewModel::rolloverToNextSeason,
-                    modifier = Modifier.fillMaxSize(),
-                )
+                when (state.currentScreen) {
+                    com.footballmanager.app.ui.viewmodel.AppScreen.MAIN_MENU -> {
+                        com.footballmanager.app.ui.screens.MainMenuScreen(
+                            state = state,
+                            onContinueGame = { viewModel.goToAppScreen(com.footballmanager.app.ui.viewmodel.AppScreen.IN_GAME) },
+                            onNewGame = { viewModel.goToAppScreen(com.footballmanager.app.ui.viewmodel.AppScreen.NEW_GAME_WIZARD) },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+
+                    com.footballmanager.app.ui.viewmodel.AppScreen.NEW_GAME_WIZARD -> {
+                        com.footballmanager.app.ui.screens.NewGameWizardScreen(
+                            clubs = state.game.clubs.values.toList(),
+                            onBack = { viewModel.goToAppScreen(com.footballmanager.app.ui.viewmodel.AppScreen.MAIN_MENU) },
+                            onStartCareer = { name, nationality, clubId ->
+                                viewModel.startNewCareer(name, nationality, clubId)
+                            },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+
+                    com.footballmanager.app.ui.viewmodel.AppScreen.IN_GAME -> {
+                        SquadScreen(
+                            state = state,
+                            onContinueClick = viewModel::playNextMatchday,
+                            onNavSection = viewModel::navigateTo,
+                            onTabSelected = viewModel::selectSquadTab,
+                            onFormationSelected = viewModel::updateFormation,
+                            onMentalitySelected = viewModel::updateMentality,
+                            onAutoSelect = viewModel::autoSelectBestXI,
+                            onStarterClick = viewModel::onStarterSelected,
+                            onBenchClick = viewModel::swapWithBench,
+                            onSubmitBid = viewModel::submitTransferBid,
+                            onOfferContract = viewModel::offerContractTerms,
+                            onCompleteDeal = viewModel::completeTransferDeal,
+                            onCancelDeal = viewModel::cancelTransferDeal,
+                            onRolloverSeason = viewModel::rolloverToNextSeason,
+                            onMainMenuClick = { viewModel.goToAppScreen(com.footballmanager.app.ui.viewmodel.AppScreen.MAIN_MENU) },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                }
             }
         }
     }
