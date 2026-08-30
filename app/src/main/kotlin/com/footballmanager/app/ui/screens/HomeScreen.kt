@@ -143,15 +143,43 @@ fun HomeScreen(
             val opponentId = if (nextFixture.home.clubId == club.id) nextFixture.away.clubId else nextFixture.home.clubId
             val isHome = nextFixture.home.clubId == club.id
             val opponent = state.game.club(opponentId)
+            val isToday = state.isMatchdayToday
+            val daysLeft = state.daysUntilNextMatch
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(FmSurface)
-                    .border(1.dp, FmBorder)
+                    .background(if (isToday) FmSurfaceSelected else FmSurface)
+                    .border(1.dp, if (isToday) FmContinueGreen else FmBorder)
                     .padding(horizontal = 14.dp, vertical = 12.dp),
             ) {
-                Text("NEXT MATCH — ROUND $nextMatchday", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 10.sp, letterSpacing = 1.sp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "NEXT MATCH — ROUND $nextMatchday",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (isToday) FmContinueGreen else FmAccentBlue,
+                        fontSize = 10.sp,
+                        letterSpacing = 1.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(if (isToday) FmContinueGreen else Color(0xFF1E293B))
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    ) {
+                        Text(
+                            text = if (isToday) "MATCHDAY TODAY" else "IN $daysLeft DAYS",
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isToday) Color.Black else FmAccentCyan,
+                        )
+                    }
+                }
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Row(
@@ -171,7 +199,13 @@ fun HomeScreen(
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Tap CONTINUE in the top bar to simulate this match.", style = MaterialTheme.typography.bodySmall, color = FmTextMuted, fontSize = 11.sp)
+                Text(
+                    text = if (isToday) "⚡ Matchday is here! Tap PLAY MATCH in the top bar to simulate."
+                           else "⏳ Daily training in progress. Tap CONTINUE in the top bar to advance 1 day and recover stamina.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (isToday) FmContinueGreen else FmTextMuted,
+                    fontSize = 11.sp,
+                )
             }
         } else if (season.isFinished) {
             Column(

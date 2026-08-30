@@ -51,4 +51,12 @@ data class GameUiState(
         get() = currentSeason.transferHistory
     val humanFinance: com.footballmanager.model.Finance
         get() = currentSeason.clubs[humanClubId]?.finance ?: humanClub.finance
+    val nextFixture: com.footballmanager.simulation.season.Fixture?
+        get() = currentSeason.fixtures.getOrNull(currentSeason.nextFixtureIndex)
+    val isMatchdayToday: Boolean
+        get() = nextFixture != null && nextFixture?.date == currentSeason.currentDate
+    val daysUntilNextMatch: Long
+        get() = if (nextFixture != null) {
+            java.time.temporal.ChronoUnit.DAYS.between(currentSeason.currentDate, nextFixture!!.date).coerceAtLeast(0L)
+        } else 0L
 }

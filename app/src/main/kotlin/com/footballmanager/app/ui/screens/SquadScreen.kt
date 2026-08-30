@@ -82,7 +82,23 @@ fun SquadScreen(
 
         @Composable
         fun MainContent() {
-            Column(modifier = Modifier.fillMaxSize()) {
+                val isMatchToday = state.isMatchdayToday
+                val isSeasonFinished = state.currentSeason.isFinished
+                val buttonText = when {
+                    isSeasonFinished -> "NEW SEASON"
+                    isMatchToday -> "PLAY MATCH"
+                    else -> "CONTINUE"
+                }
+                val buttonColor = when {
+                    isSeasonFinished -> Color(0xFFEAB308)
+                    isMatchToday -> FmContinueGreen
+                    else -> Color(0xFF2563EB)
+                }
+                val textColor = when {
+                    isSeasonFinished || isMatchToday -> Color.Black
+                    else -> Color.White
+                }
+
                 // Top App Bar
                 FmTopAppBar(
                     clubName = state.humanClub.name,
@@ -95,6 +111,9 @@ fun SquadScreen(
                         else -> "Overview > ${activeNavSection.title}"
                     },
                     currentDateText = "${state.currentSeason.currentDate}",
+                    continueButtonText = buttonText,
+                    continueButtonColor = buttonColor,
+                    continueTextColor = textColor,
                     onMenuClick = if (!isTablet) ({
                         coroutineScope.launch {
                             if (drawerState.isClosed) drawerState.open() else drawerState.close()

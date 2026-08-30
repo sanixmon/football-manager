@@ -61,7 +61,7 @@ class MainActivity : ComponentActivity() {
                     com.footballmanager.app.ui.viewmodel.AppScreen.IN_GAME -> {
                         SquadScreen(
                             state = state,
-                            onContinueClick = viewModel::playNextMatchday,
+                            onContinueClick = viewModel::advanceSmart,
                             onNavSection = viewModel::navigateTo,
                             onTabSelected = viewModel::selectSquadTab,
                             onFormationSelected = viewModel::updateFormation,

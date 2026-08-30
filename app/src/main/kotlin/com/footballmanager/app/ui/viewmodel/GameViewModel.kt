@@ -211,6 +211,20 @@ class GameViewModel(
     }
 
     // ── Matchday & Calendar Progression ──────────────────────────────────
+    fun advanceSmart() {
+        val state = _uiState.value
+        if (state.currentSeason.isFinished) {
+            rolloverToNextSeason()
+            return
+        }
+        val nextFixture = state.currentSeason.fixtures.getOrNull(state.currentSeason.nextFixtureIndex)
+        if (nextFixture != null && nextFixture.date <= state.currentSeason.currentDate) {
+            playNextMatchday()
+        } else {
+            advanceDay()
+        }
+    }
+
     fun playNextMatchday() {
         _uiState.update { state ->
             if (state.currentSeason.isFinished) return@update state

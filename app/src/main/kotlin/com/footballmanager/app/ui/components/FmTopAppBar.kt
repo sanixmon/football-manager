@@ -48,6 +48,9 @@ fun FmTopAppBar(
     breadcrumb: String,
     currentDateText: String,
     onMenuClick: (() -> Unit)? = null,
+    continueButtonText: String = "CONTINUE",
+    continueButtonColor: Color = FmContinueGreen,
+    continueTextColor: Color = Color.Black,
     onContinueClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -164,13 +167,13 @@ fun FmTopAppBar(
                 modifier = Modifier
                     .height(34.dp)
                     .clip(RoundedCornerShape(17.dp))
-                    .background(FmContinueGreen)
+                    .background(continueButtonColor)
                     .clickable(onClick = onContinueClick)
                     .padding(horizontal = 14.dp),
             ) {
                 Text(
-                    text = "CONTINUE",
-                    color = Color.Black,
+                    text = continueButtonText,
+                    color = continueTextColor,
                     fontWeight = FontWeight.Black,
                     fontSize = 11.sp,
                     letterSpacing = 0.5.sp,
@@ -179,7 +182,7 @@ fun FmTopAppBar(
                 Icon(
                     imageVector = Icons.Outlined.ChevronRight,
                     contentDescription = null,
-                    tint = Color.Black,
+                    tint = continueTextColor,
                     modifier = Modifier.size(16.dp),
                 )
             }
