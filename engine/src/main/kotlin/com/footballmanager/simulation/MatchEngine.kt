@@ -29,7 +29,9 @@ class MatchEngine(
     fun simulate(home: Team, away: Team): MatchResult {
         require(home.clubId != away.clubId) { "home and away must be different clubs" }
 
-        logger.onMatchStart(home, away)
+        if (logger.isEnabled) {
+            logger.onMatchStart(home, away)
+        }
 
         val homeAttack = home.effectiveAttack() * HOME_ADVANTAGE
         val homeDefense = home.effectiveDefense() * HOME_ADVANTAGE
@@ -83,18 +85,24 @@ class MatchEngine(
                     }
                     val event = MatchEvent(minute, MatchEventType.GOAL, side)
                     events += event
-                    logger.onTickEvent(tick, event)
+                    if (logger.isEnabled) {
+                        logger.onTickEvent(tick, event)
+                    }
                 }
                 roll < saveProbability -> {
                     if (homeAttacks) homeOnTarget++ else awayOnTarget++
                     val event = MatchEvent(minute, MatchEventType.SHOT_SAVED, side)
                     events += event
-                    logger.onTickEvent(tick, event)
+                    if (logger.isEnabled) {
+                        logger.onTickEvent(tick, event)
+                    }
                 }
                 else -> {
                     val event = MatchEvent(minute, MatchEventType.SHOT_MISSED, side)
                     events += event
-                    logger.onTickEvent(tick, event)
+                    if (logger.isEnabled) {
+                        logger.onTickEvent(tick, event)
+                    }
                 }
             }
         }
@@ -112,7 +120,9 @@ class MatchEngine(
             events = events,
             stats = stats,
         )
-        logger.onMatchEnd(result)
+        if (logger.isEnabled) {
+            logger.onMatchEnd(result)
+        }
         return result
     }
 
