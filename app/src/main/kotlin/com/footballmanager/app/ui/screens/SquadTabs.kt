@@ -469,7 +469,7 @@ fun SquadContractsTab(
                 }
                 Text(statusText, style = MaterialTheme.typography.bodySmall, color = statusColor, fontSize = 10.sp, modifier = Modifier.weight(1f))
                 Text(
-                    "Rp ${(player.contract.weeklyWage / 1_000_000).coerceAtLeast(5)}M",
+                    "$${"%,d".format(player.contract.weeklyWage)}",
                     style = MaterialTheme.typography.bodySmall, color = FmTextPrimary, fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold, textAlign = TextAlign.End, modifier = Modifier.weight(1f),
                 )

@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.Color
 val FmDarkBg = Color(0xFF1A1D23)
 val FmSurface = Color(0xFF22262E)
 val FmSurfaceAlt = Color(0xFF1E2229)
+val FmCardBg = Color(0xFF1E2229)
 val FmSurfaceHover = Color(0xFF2A2F38)
 val FmSurfaceSelected = Color(0xFF2F3642)
 val FmBorder = Color(0xFF333945)

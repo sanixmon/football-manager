@@ -324,7 +324,7 @@ fun FmSquadTable(
 
                 // 7. Wage
                 Text(
-                    text = "Rp ${(player.contract.weeklyWage / 1_000_000).coerceAtLeast(5)}M/w",
+                    text = "$${"%,d".format(player.contract.weeklyWage)}/w",
                     style = MaterialTheme.typography.bodySmall,
                     color = FmTextSecondary,
                     fontSize = 11.sp,
@@ -334,9 +334,9 @@ fun FmSquadTable(
                 )
 
                 // 8. Value
-                val estimatedValue = ((rating * rating * 450_000L) / 1_000_000_000.0)
+                val estimatedValue = com.footballmanager.calculator.TransferValuationCalculator.calculateMarketValue(player)
                 Text(
-                    text = String.format("Rp %.1fB", estimatedValue),
+                    text = "$${"%,d".format(estimatedValue)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = FmAccentCyan,
                     fontWeight = FontWeight.SemiBold,
