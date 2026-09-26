@@ -246,6 +246,27 @@ fun FmSquadTable(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    if (player.isInjured) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(FmRatingLow.copy(alpha = 0.25f))
+                                .padding(horizontal = 4.dp, vertical = 1.dp),
+                        ) {
+                            Text("INJ", color = FmRatingLow, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                        }
+                    } else if (player.isSuspended) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(FmRatingLow.copy(alpha = 0.25f))
+                                .padding(horizontal = 4.dp, vertical = 1.dp),
+                        ) {
+                            Text("SUS", color = FmRatingLow, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
 
                 // 3. Age

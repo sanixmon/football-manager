@@ -8,36 +8,14 @@ const val MIN_ATTRIBUTE = 1
 const val MAX_ATTRIBUTE = 100
 
 @Serializable
-enum class AttributeCategory {
-    TECHNICAL,
+enum class Attribute {
+    PACE,
+    SHOOTING,
+    PASSING,
+    DRIBBLING,
+    DEFENDING,
     PHYSICAL,
-    MENTAL,
-}
-
-@Serializable
-enum class Attribute(val category: AttributeCategory) {
-    // Technical
-    PASSING(AttributeCategory.TECHNICAL),
-    FIRST_TOUCH(AttributeCategory.TECHNICAL),
-    FINISHING(AttributeCategory.TECHNICAL),
-    DRIBBLING(AttributeCategory.TECHNICAL),
-    CROSSING(AttributeCategory.TECHNICAL),
-    TACKLING(AttributeCategory.TECHNICAL),
-
-    // Physical
-    PACE(AttributeCategory.PHYSICAL),
-    ACCELERATION(AttributeCategory.PHYSICAL),
-    STRENGTH(AttributeCategory.PHYSICAL),
-    STAMINA(AttributeCategory.PHYSICAL),
-    AGILITY(AttributeCategory.PHYSICAL),
-
-    // Mental
-    DECISION_MAKING(AttributeCategory.MENTAL),
-    COMPOSURE(AttributeCategory.MENTAL),
-    POSITIONING(AttributeCategory.MENTAL),
-    VISION(AttributeCategory.MENTAL),
-    WORK_RATE(AttributeCategory.MENTAL),
-    LEADERSHIP(AttributeCategory.MENTAL),
+    GOALKEEPER,
 }
 
 /**

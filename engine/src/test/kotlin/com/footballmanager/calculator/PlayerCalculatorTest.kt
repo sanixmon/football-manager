@@ -21,7 +21,7 @@ class PlayerCalculatorTest {
             name = "Test Striker",
             age = 24,
             nationality = "ID",
-            naturalPositions = listOf(Position.ST, Position.CAM),
+            naturalPositions = listOf(Position.ST, Position.AM),
             attributes = attributes,
             contract = Contract(expiresOn = LocalDate.of(2030, 6, 30)),
             fitness = fitness,

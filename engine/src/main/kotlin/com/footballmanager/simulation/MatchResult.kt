@@ -10,6 +10,10 @@ data class MatchResult(
     val awayScore: Int,
     val events: List<MatchEvent>,
     val stats: MatchStats,
+    val durationMinutes: Int = 90,
+    val playerStats: Map<Long, PlayerMatchStats> = emptyMap(),
+    val playerRatings: Map<Long, Double> = emptyMap(),
+    val substitutions: List<SubstitutionRecord> = emptyList(),
 ) {
     val isHomeWin: Boolean get() = homeScore > awayScore
     val isAwayWin: Boolean get() = awayScore > homeScore

@@ -61,17 +61,17 @@ class EngineIntegrationTest {
                     "shortName": "ALP",
                     "formation": "4-4-2",
                     "players": [
-                        { "name": "Player A1", "position": "GK", "age": 25, "attributes": { "POSITIONING": 80 } },
-                        { "name": "Player A2", "position": "CB", "age": 24, "attributes": { "TACKLING": 75 } },
-                        { "name": "Player A3", "position": "CB", "age": 26, "attributes": { "TACKLING": 78 } },
+                        { "name": "Player A1", "position": "GK", "age": 25, "attributes": { "GOALKEEPER": 80 } },
+                        { "name": "Player A2", "position": "CB", "age": 24, "attributes": { "DEFENDING": 75 } },
+                        { "name": "Player A3", "position": "CB", "age": 26, "attributes": { "DEFENDING": 78 } },
                         { "name": "Player A4", "position": "LB", "age": 22, "attributes": { "PACE": 82 } },
                         { "name": "Player A5", "position": "RB", "age": 23, "attributes": { "PACE": 80 } },
                         { "name": "Player A6", "position": "CM", "age": 27, "attributes": { "PASSING": 85 } },
                         { "name": "Player A7", "position": "CM", "age": 28, "attributes": { "PASSING": 83 } },
-                        { "name": "Player A8", "position": "LM", "age": 21, "attributes": { "DRIBBLING": 84 } },
-                        { "name": "Player A9", "position": "RM", "age": 22, "attributes": { "DRIBBLING": 81 } },
-                        { "name": "Player A10", "position": "ST", "age": 29, "attributes": { "FINISHING": 88 } },
-                        { "name": "Player A11", "position": "ST", "age": 20, "attributes": { "FINISHING": 79 } }
+                        { "name": "Player A8", "position": "LW", "age": 21, "attributes": { "DRIBBLING": 84 } },
+                        { "name": "Player A9", "position": "RW", "age": 22, "attributes": { "DRIBBLING": 81 } },
+                        { "name": "Player A10", "position": "ST", "age": 29, "attributes": { "SHOOTING": 88 } },
+                        { "name": "Player A11", "position": "ST", "age": 20, "attributes": { "SHOOTING": 79 } }
                     ]
                 }
             ]

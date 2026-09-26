@@ -9,6 +9,7 @@ val gameJson: Json = Json {
     prettyPrint = true
     prettyPrintIndent = "  "
     encodeDefaults = true
+    ignoreUnknownKeys = true
 }
 
 /** Serialize this [Game] to [path] as pretty-printed JSON. Returns the game for chaining. */
@@ -18,5 +19,13 @@ fun Game.saveToFile(path: String): Game {
 }
 
 /** Deserialize a [Game] previously written by [saveToFile]. */
-fun Game.Companion.loadFromFile(path: String): Game =
-    gameJson.decodeFromString(Game.serializer(), File(path).readText())
+fun Game.Companion.loadFromFile(path: String): Game {
+    val text = File(path).readText()
+    return try {
+        gameJson.decodeFromString(Game.serializer(), text)
+    } catch (_: Exception) {
+        val dto = gameJson.decodeFromString(SaveGameDto.serializer(), text)
+        SaveValidator.validate(dto)
+        SaveGameMapper.toDomain(dto)
+    }
+}

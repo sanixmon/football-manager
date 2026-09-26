@@ -32,8 +32,8 @@ class ModSnapshotTest {
         assertEquals(26, budi.age)
         assertEquals(Position.ST, budi.naturalPositions.first())
         assertEquals(98012345L, budi.graphicsId)
-        assertEquals(88, budi.attributes[Attribute.FINISHING])
+        assertEquals(88, budi.attributes[Attribute.SHOOTING])
         assertEquals(85, budi.attributes[Attribute.PACE])
-        assertEquals(80, budi.attributes[Attribute.COMPOSURE])
+        assertEquals(80, budi.attributes[Attribute.DRIBBLING])
     }
 }

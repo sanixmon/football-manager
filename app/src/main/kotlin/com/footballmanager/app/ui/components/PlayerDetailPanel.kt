@@ -55,7 +55,6 @@ import com.footballmanager.app.ui.theme.FmTextMuted
 import com.footballmanager.app.ui.theme.FmTextPrimary
 import com.footballmanager.app.ui.theme.FmTextSecondary
 import com.footballmanager.model.Attribute
-import com.footballmanager.model.AttributeCategory
 import com.footballmanager.model.Player
 import com.footballmanager.model.PositionGroup
 
@@ -213,16 +212,21 @@ fun PlayerDetailContent(
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        val techAttributes = Attribute.entries.filter { it.category == AttributeCategory.TECHNICAL }
-        val mentAttributes = Attribute.entries.filter { it.category == AttributeCategory.MENTAL }
-        val physAttributes = Attribute.entries.filter { it.category == AttributeCategory.PHYSICAL }
+        val outfieldAttributes = listOf(
+            Attribute.PACE,
+            Attribute.SHOOTING,
+            Attribute.PASSING,
+            Attribute.DRIBBLING,
+            Attribute.DEFENDING,
+            Attribute.PHYSICAL,
+        )
+        val gkAttributes = listOf(Attribute.GOALKEEPER)
 
-        AttributeSection("TECHNICAL", techAttributes, player)
-        Spacer(modifier = Modifier.height(10.dp))
-        AttributeSection("MENTAL", mentAttributes, player)
-        Spacer(modifier = Modifier.height(10.dp))
-        AttributeSection("PHYSICAL", physAttributes, player)
-
+        AttributeSection("OUTFIELD ATTRIBUTES", outfieldAttributes, player)
+        if (player.naturalPositions.contains(com.footballmanager.model.Position.GK) || player.attributes[Attribute.GOALKEEPER] > 1) {
+            Spacer(modifier = Modifier.height(10.dp))
+            AttributeSection("GOALKEEPING", gkAttributes, player)
+        }
         Spacer(modifier = Modifier.height(16.dp))
         HorizontalDivider(color = FmBorder, thickness = 1.dp)
         Spacer(modifier = Modifier.height(14.dp))

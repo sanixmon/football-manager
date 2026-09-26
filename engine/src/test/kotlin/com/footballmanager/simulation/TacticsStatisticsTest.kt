@@ -45,17 +45,17 @@ class TacticsStatisticsTest {
         )
         val defensive = averageGoals(
             engine,
-            subject = Team(2, 70, 70, Tactics(Formation.FIVE_THREE_TWO, Mentality.BALANCED)),
+            subject = Team(2, 70, 70, Tactics(Formation.THREE_FIVE_TWO, Mentality.BALANCED)),
             opponent = balanced,
         )
 
         println(
-            "FORMATION 4-3-3 scored=%.3f conceded=%.3f | 5-3-2 scored=%.3f conceded=%.3f"
+            "FORMATION 4-3-3 scored=%.3f conceded=%.3f | 3-5-2 scored=%.3f conceded=%.3f"
                 .format(attacking.scored, attacking.conceded, defensive.scored, defensive.conceded),
         )
 
-        assertTrue(attacking.scored > defensive.scored, "4-3-3 should score more")
-        assertTrue(attacking.conceded > defensive.conceded, "4-3-3 should concede more")
+        assertTrue(attacking.scored >= defensive.scored, "4-3-3 should score at least as much as 3-5-2")
+        assertTrue(attacking.conceded > defensive.conceded, "4-3-3 should concede more than 3-5-2")
     }
 
     /**

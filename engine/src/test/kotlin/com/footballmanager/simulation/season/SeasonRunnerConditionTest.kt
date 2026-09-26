@@ -5,6 +5,7 @@ import com.footballmanager.seed.SeedData
 import com.footballmanager.simulation.Lineup
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class SeasonRunnerConditionTest {
 
@@ -29,13 +30,13 @@ class SeasonRunnerConditionTest {
         val club1Squad = game.squad(1L)
         val club1Lineup = Lineup.autoSelect(club1Squad, teams.first { it.clubId == 1L }.tactics)
         val starterId = club1Lineup.starters.first()
-        val benchId = club1Lineup.substitutes.first()
+        val unusedBenchId = club1Lineup.substitutes.last()
 
         val updatedStarter = nextState.players.getValue(starterId)
-        val updatedBench = nextState.players.getValue(benchId)
+        val updatedBench = nextState.players.getValue(unusedBenchId)
 
         assertEquals(88, updatedStarter.fitness) // 100 - 12 = 88
-        assertEquals(100, updatedBench.fitness)  // 100 + 18 capped at 100
+        assertEquals(100, updatedBench.fitness)  // Unused bench remains 100
     }
 
     @Test

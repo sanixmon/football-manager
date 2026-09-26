@@ -28,6 +28,10 @@ data class GameUiState(
     // Navigation
     val activeNavSection: FmNavSection = FmNavSection.HOME,
     val activeSquadTab: FmSquadTab = FmSquadTab.OVERVIEW,
+    val saveStatusMessage: String? = null,
+    val transferErrorMessage: String? = null,
+    val transferSuccessMessage: String? = null,
+    val lineupValidationError: String? = null,
 ) {
     val humanClub: Club get() = game.club(humanClubId)
     val humanSquad: List<Player>

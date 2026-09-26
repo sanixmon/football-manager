@@ -83,6 +83,8 @@ class SeasonRolloverUseCase(
                     naturalPositions = listOf(pos),
                     attributes = PlayerAttributes(attrs),
                     contract = Contract(weeklyWage = 800L, expiresOn = LocalDate.of(nextYear + 3, 6, 30)),
+                    potential = (baseQuality + 15).coerceIn(60, 100),
+                    form = 60,
                 )
                 updatedPlayers[pId] = youthPlayer
                 newPlayerIds.add(pId)

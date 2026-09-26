@@ -47,12 +47,12 @@ object SeedData {
         ClubSpec("Bandung Sakti", "BDG", 80, Formation.FOUR_FOUR_TWO, Mentality.BALANCED),
         ClubSpec("Surabaya Timur", "SBY", 78, Formation.FOUR_THREE_THREE, Mentality.BALANCED),
         ClubSpec("Medan Utara", "MDN", 75, Formation.FOUR_FOUR_TWO, Mentality.BALANCED),
-        ClubSpec("Makassar Selatan", "MKS", 71, Formation.FIVE_THREE_TWO, Mentality.DEFENSIVE),
+        ClubSpec("Makassar Selatan", "MKS", 71, Formation.THREE_FIVE_TWO, Mentality.DEFENSIVE),
         ClubSpec("Semarang City", "SMG", 68, Formation.FOUR_FOUR_TWO, Mentality.ATTACKING),
-        ClubSpec("Palembang United", "PLM", 64, Formation.FIVE_THREE_TWO, Mentality.DEFENSIVE),
+        ClubSpec("Palembang United", "PLM", 64, Formation.FOUR_TWO_THREE_ONE, Mentality.BALANCED),
         ClubSpec("Denpasar Bali", "DPS", 60, Formation.FOUR_FOUR_TWO, Mentality.BALANCED),
-        ClubSpec("Balikpapan Oilers", "BPP", 56, Formation.FIVE_THREE_TWO, Mentality.DEFENSIVE),
-        ClubSpec("Pontianak Rovers", "PTK", 52, Formation.FIVE_THREE_TWO, Mentality.DEFENSIVE),
+        ClubSpec("Balikpapan Oilers", "BPP", 56, Formation.THREE_FIVE_TWO, Mentality.DEFENSIVE),
+        ClubSpec("Pontianak Rovers", "PTK", 52, Formation.FOUR_TWO_THREE_ONE, Mentality.DEFENSIVE),
     )
 
     /** 18-player squad: 2 GK, 6 DF, 5 MF, 5 FW. */
@@ -60,8 +60,8 @@ object SeedData {
         Position.GK, Position.GK,
         Position.CB, Position.CB, Position.CB, Position.CB,
         Position.LB, Position.RB,
-        Position.CDM, Position.CM, Position.CM, Position.CM,
-        Position.CAM,
+        Position.DM, Position.CM, Position.CM, Position.CM,
+        Position.AM,
         Position.LW, Position.RW,
         Position.ST, Position.ST, Position.ST,
     )
@@ -138,6 +138,8 @@ object SeedData {
         random: Random,
     ): Player {
         val weeklyWage = 1000L + (quality * 50L) + (random.nextInt(0, 10) * 100L)
+        val potential = (quality + random.nextInt(0, 15)).coerceIn(quality, 100)
+        val form = 50 + random.nextInt(-5, 15)
         return Player(
             id = id,
             name = name,
@@ -146,6 +148,8 @@ object SeedData {
             naturalPositions = listOf(position),
             attributes = attributes(position, quality, random),
             contract = Contract(weeklyWage = weeklyWage, expiresOn = LocalDate.of(2030, 6, 30)),
+            potential = potential,
+            form = form,
         )
     }
 

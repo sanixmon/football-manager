@@ -14,6 +14,7 @@ data class PlayerSeasonStats(
     val yellowCards: Int = 0,
     val redCards: Int = 0,
     val totalRatingPoints: Double = 0.0,
+    val unservedYellowCards: Int = 0,
 ) {
     val averageRating: Double
         get() = if (appearances > 0) totalRatingPoints / appearances else 0.0
@@ -26,6 +27,7 @@ data class PlayerSeasonStats(
         matchRating: Double = 6.5,
         yellow: Boolean = false,
         red: Boolean = false,
+        newUnservedYellowCards: Int = unservedYellowCards + if (yellow && !red) 1 else 0,
     ): PlayerSeasonStats = copy(
         appearances = appearances + 1,
         starts = if (isStarter) starts + 1 else starts,
@@ -36,5 +38,6 @@ data class PlayerSeasonStats(
         yellowCards = if (yellow) yellowCards + 1 else yellowCards,
         redCards = if (red) redCards + 1 else redCards,
         totalRatingPoints = totalRatingPoints + matchRating,
+        unservedYellowCards = newUnservedYellowCards,
     )
 }

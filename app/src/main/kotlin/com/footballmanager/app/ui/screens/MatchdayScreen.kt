@@ -251,11 +251,19 @@ fun MatchdayScreen(
                 }
             }
 
-            items(result.events) { event ->
+            items(result.events.filter { it.type != MatchEventType.POSSESSION }) { event ->
                 val (icon, iconColor) = when (event.type) {
                     MatchEventType.GOAL -> Icons.Outlined.SportsSoccer to FmRatingHigh
-                    MatchEventType.SHOT_SAVED -> Icons.Outlined.Shield to FmAccentBlue
+                    MatchEventType.SHOT, MatchEventType.SHOT_ON_TARGET -> Icons.Outlined.SportsSoccer to FmAccentBlue
+                    MatchEventType.SAVE, MatchEventType.SHOT_SAVED -> Icons.Outlined.Shield to FmAccentBlue
                     MatchEventType.SHOT_MISSED -> Icons.Outlined.Close to FmRatingLow
+                    MatchEventType.YELLOW_CARD -> Icons.Outlined.PlayArrow to FmRatingMed
+                    MatchEventType.RED_CARD -> Icons.Outlined.Close to FmRatingLow
+                    MatchEventType.INJURY -> Icons.Outlined.Close to FmRatingLow
+                    MatchEventType.SUBSTITUTION -> Icons.Outlined.ChevronRight to FmAccentCyan
+                    MatchEventType.CORNER -> Icons.Outlined.PlayArrow to FmAccentBlue
+                    MatchEventType.FOUL -> Icons.Outlined.Close to FmTextMuted
+                    else -> Icons.Outlined.PlayArrow to FmTextMuted
                 }
                 Row(
                     modifier = Modifier
@@ -269,13 +277,74 @@ fun MatchdayScreen(
                     Text("${event.minute}'", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontWeight = FontWeight.Bold, fontSize = 11.sp, modifier = Modifier.width(32.dp))
                     Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(16.dp))
                     Text(
-                        "${event.side}: ${event.type.name.replace('_', ' ')}",
+                        text = if (event.description.isNotBlank()) event.description else "${event.side}: ${event.type.name.replace('_', ' ')}",
                         style = MaterialTheme.typography.bodySmall,
                         color = FmTextPrimary,
                         fontSize = 12.sp,
                     )
                 }
                 HorizontalDivider(color = FmBorder.copy(alpha = 0.3f), thickness = 0.5.dp)
+            }
+            // ─── Match Player Ratings ───────────────────────────────────────
+            if (result.playerRatings.isNotEmpty()) {
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(32.dp)
+                            .background(Color(0xFF181B20))
+                            .border(1.dp, FmBorder)
+                            .padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("PLAYER RATINGS", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 10.sp, letterSpacing = 1.sp)
+                    }
+                }
+
+                val participatingPlayers = result.playerRatings.entries
+                    .mapNotNull { (pId, rating) ->
+                        state.currentSeason.players[pId]?.let { p -> Triple(p, rating, result.playerStats[pId]) }
+                    }
+                    .sortedByDescending { it.second }
+
+                items(participatingPlayers) { (player, rating, pStats) ->
+                    val ratingColor = when {
+                        rating >= 7.5 -> FmRatingHigh
+                        rating >= 6.5 -> FmRatingMed
+                        else -> FmRatingLow
+                    }
+                    val isUserPlayer = player.id in state.humanSquad.map { it.id }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(38.dp)
+                            .background(if (isUserPlayer) FmSurfaceSelected else FmSurface)
+                            .padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(player.bestPosition().name, style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            Text(player.name, style = MaterialTheme.typography.bodySmall, color = if (isUserPlayer) Color.White else FmTextPrimary, fontSize = 12.sp)
+                            pStats?.let { st ->
+                                if (st.goals > 0) Text("G: ${st.goals}", fontSize = 10.sp, color = FmRatingHigh, fontWeight = FontWeight.Bold)
+                                if (st.assists > 0) Text("A: ${st.assists}", fontSize = 10.sp, color = FmAccentCyan, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(ratingColor.copy(alpha = 0.2f))
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
+                        ) {
+                            Text("$rating", style = MaterialTheme.typography.labelSmall, color = ratingColor, fontWeight = FontWeight.Black, fontSize = 11.sp)
+                        }
+                    }
+                    HorizontalDivider(color = FmBorder.copy(alpha = 0.3f), thickness = 0.5.dp)
+                }
             }
         }
 

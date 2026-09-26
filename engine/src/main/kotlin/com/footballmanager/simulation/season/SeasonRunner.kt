@@ -6,6 +6,7 @@ import com.footballmanager.model.Player
 import com.footballmanager.simulation.Lineup
 import com.footballmanager.simulation.MatchEngine
 import com.footballmanager.simulation.Team
+import com.footballmanager.usecase.ApplyMatchResultToWorldUseCase
 import java.time.LocalDate
 
 /**
@@ -19,6 +20,7 @@ import java.time.LocalDate
  */
 class SeasonRunner(
     private val engine: MatchEngine = MatchEngine(),
+    private val applyMatchResultToWorldUseCase: ApplyMatchResultToWorldUseCase = ApplyMatchResultToWorldUseCase(),
 ) {
     fun start(
         league: League,
@@ -70,10 +72,11 @@ class SeasonRunner(
 
             if (squadPlayers.size < 11) return baseTeam
 
-            val lineup = state.lineups[clubId] ?: Lineup.autoSelect(squadPlayers, baseTeam.tactics)
+            val lineup = state.lineups[clubId] ?: Lineup.autoSelect(squadPlayers, baseTeam.tactics, clubId = clubId)
             activeLineups[clubId] = lineup
-            val starters = lineup.starters.map { state.players.getValue(it) }
-            return Team.fromLineup(clubId, starters, baseTeam.tactics)
+            val starters = lineup.starters.map { state.players[it] ?: com.footballmanager.model.EmergencyGoalkeeper.create(clubId, it) }
+            val subs = lineup.substitutes.mapNotNull { state.players[it] }
+            return Team.fromLineup(clubId, starters, baseTeam.tactics, substitutes = subs)
         }
 
         val results = matchdayFixtures.map { fixture ->
@@ -82,60 +85,19 @@ class SeasonRunner(
             engine.simulate(homeTeam, awayTeam)
         }
 
-        val updatedPlayers = state.players.toMutableMap()
-        if (state.players.isNotEmpty()) {
-            for (result in results) {
-                updateClubCondition(result.homeClubId, result.homeScore, result.awayScore, activeLineups, updatedPlayers)
-                updateClubCondition(result.awayClubId, result.awayScore, result.homeScore, activeLineups, updatedPlayers)
-            }
-        }
-
-        return state.copy(
+        var progressedState = state.copy(
             results = state.results + results,
             standings = state.standings.withResults(matchdayFixtures, results),
             nextFixtureIndex = end,
             currentDate = matchdayFixtures.last().date,
-            players = updatedPlayers,
         )
-    }
 
-    private fun updateClubCondition(
-        clubId: Long,
-        goalsFor: Int,
-        goalsAgainst: Int,
-        activeLineups: Map<Long, Lineup>,
-        playersMap: MutableMap<Long, Player>,
-    ) {
-        val lineup = activeLineups[clubId] ?: return
-
-        val (starterMoraleDelta, benchMoraleDelta) = when {
-            goalsFor > goalsAgainst -> 8 to 4
-            goalsFor < goalsAgainst -> -6 to -3
-            else -> 0 to 0
-        }
-
-        for (starterId in lineup.starters) {
-            playersMap[starterId]?.let { p ->
-                val newFitness = (p.fitness - 12).coerceIn(1, 100)
-                val newMorale = (p.morale + starterMoraleDelta).coerceIn(1, 100)
-                playersMap[starterId] = p.copy(fitness = newFitness, morale = newMorale)
+        if (state.players.isNotEmpty()) {
+            for (result in results) {
+                progressedState = applyMatchResultToWorldUseCase.execute(progressedState, result)
             }
         }
 
-        for (benchId in lineup.substitutes) {
-            playersMap[benchId]?.let { p ->
-                val newFitness = (p.fitness + 18).coerceIn(1, 100)
-                val newMorale = if (starterMoraleDelta == 0) {
-                    when {
-                        p.morale > 50 -> (p.morale - 1).coerceIn(1, 100)
-                        p.morale < 50 -> (p.morale + 1).coerceIn(1, 100)
-                        else -> 50
-                    }
-                } else {
-                    (p.morale + benchMoraleDelta).coerceIn(1, 100)
-                }
-                playersMap[benchId] = p.copy(fitness = newFitness, morale = newMorale)
-            }
-        }
+        return progressedState
     }
 }

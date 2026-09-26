@@ -11,6 +11,9 @@ import com.footballmanager.seed.SeedData
 import com.footballmanager.simulation.Formation
 import com.footballmanager.simulation.Lineup
 import com.footballmanager.simulation.Mentality
+import com.footballmanager.simulation.Passing
+import com.footballmanager.simulation.Pressing
+import com.footballmanager.simulation.Tempo
 import com.footballmanager.simulation.season.SeasonRunner
 import com.footballmanager.model.SquadStatus
 import com.footballmanager.model.ContractOffer
@@ -23,6 +26,11 @@ import com.footballmanager.usecase.NegotiateContractUseCase
 import com.footballmanager.usecase.SeasonRolloverUseCase
 import com.footballmanager.usecase.SelectLineupUseCase
 import com.footballmanager.usecase.SubmitTransferBidUseCase
+import com.footballmanager.serialization.SaveSlot
+import com.footballmanager.simulation.LineupValidationResult
+import com.footballmanager.simulation.LineupValidator
+import com.footballmanager.usecase.DirectTransferRequest
+import com.footballmanager.usecase.DirectTransferUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -51,6 +59,9 @@ class GameViewModel(
         runner = runner,
         selectLineupUseCase = selectLineupUseCase,
     )
+
+    private var isSimulatingInFlight = false
+    private var isTransferringInFlight = false
 
     private val _uiState: MutableStateFlow<GameUiState>
 
@@ -171,6 +182,45 @@ class GameViewModel(
         }
     }
 
+    fun updateTempo(tempo: Tempo) {
+        _uiState.update { state ->
+            val newTactics = state.humanTeam.tactics.copy(tempo = tempo)
+            val updatedSeason = state.currentSeason.setTactics(state.humanClubId, newTactics)
+            val updatedGame = state.game.copy(currentSeason = updatedSeason)
+            gameRepository.saveGame(updatedGame)
+            state.copy(
+                game = updatedGame,
+                currentSeason = updatedSeason,
+            )
+        }
+    }
+
+    fun updatePressing(pressing: Pressing) {
+        _uiState.update { state ->
+            val newTactics = state.humanTeam.tactics.copy(pressing = pressing)
+            val updatedSeason = state.currentSeason.setTactics(state.humanClubId, newTactics)
+            val updatedGame = state.game.copy(currentSeason = updatedSeason)
+            gameRepository.saveGame(updatedGame)
+            state.copy(
+                game = updatedGame,
+                currentSeason = updatedSeason,
+            )
+        }
+    }
+
+    fun updatePassing(passing: Passing) {
+        _uiState.update { state ->
+            val newTactics = state.humanTeam.tactics.copy(passing = passing)
+            val updatedSeason = state.currentSeason.setTactics(state.humanClubId, newTactics)
+            val updatedGame = state.game.copy(currentSeason = updatedSeason)
+            gameRepository.saveGame(updatedGame)
+            state.copy(
+                game = updatedGame,
+                currentSeason = updatedSeason,
+            )
+        }
+    }
+
     fun autoSelectBestXI() {
         _uiState.update { state ->
             val newLineup = selectLineupUseCase(state.humanSquad, state.humanTeam.tactics)
@@ -198,7 +248,18 @@ class GameViewModel(
             val currentLineup = state.humanLineup
             val newStarters = currentLineup.starters.map { if (it == starterId) benchPlayerId else it }
             val newSubs = currentLineup.substitutes.map { if (it == benchPlayerId) starterId else it }
-            val newLineup = Lineup(starters = newStarters, substitutes = newSubs)
+
+            val newLineup = try {
+                Lineup(starters = newStarters, substitutes = newSubs)
+            } catch (e: Exception) {
+                return@update state.copy(lineupValidationError = e.message)
+            }
+
+            val validation = LineupValidator.validate(newLineup, state.currentSeason.players)
+            if (validation is LineupValidationResult.Invalid) {
+                return@update state.copy(lineupValidationError = validation.message)
+            }
+
             val updatedSeason = state.currentSeason.setLineup(state.humanClubId, newLineup)
             val updatedGame = state.game.copy(currentSeason = updatedSeason)
             gameRepository.saveGame(updatedGame)
@@ -206,12 +267,14 @@ class GameViewModel(
                 game = updatedGame,
                 currentSeason = updatedSeason,
                 selectedStarterPlayerId = null,
+                lineupValidationError = null,
             )
         }
     }
 
     // ── Matchday & Calendar Progression ──────────────────────────────────
     fun advanceSmart() {
+        if (_uiState.value.isSimulating || isSimulatingInFlight) return
         val state = _uiState.value
         if (state.currentSeason.isFinished) {
             rolloverToNextSeason()
@@ -226,34 +289,125 @@ class GameViewModel(
     }
 
     fun playNextMatchday() {
-        _uiState.update { state ->
-            if (state.currentSeason.isFinished) return@update state
-            val prevIndex = state.currentSeason.nextFixtureIndex
-            val nextSeason = runner.playNextMatchday(state.currentSeason)
-            val newlyPlayedResults = nextSeason.results.subList(prevIndex, nextSeason.nextFixtureIndex)
+        val currentState = _uiState.value
+        if (currentState.isSimulating || isSimulatingInFlight || currentState.currentSeason.isFinished) return
 
-            var worldSeason = nextSeason
-            for (res in newlyPlayedResults) {
-                worldSeason = applyMatchResultToWorldUseCase.execute(worldSeason, res)
-            }
+        // Validate human lineup before starting match
+        val validation = LineupValidator.validate(currentState.humanLineup, currentState.currentSeason.players)
+        if (validation is LineupValidationResult.Invalid) {
+            _uiState.update { it.copy(lineupValidationError = "Cannot start match: ${validation.message}") }
+            return
+        }
 
-            val userMatchResult = worldSeason.results.lastOrNull {
-                it.homeClubId == state.humanClubId || it.awayClubId == state.humanClubId
+        isSimulatingInFlight = true
+        _uiState.update { it.copy(isSimulating = true, lineupValidationError = null) }
+        try {
+            val prevIndex = currentState.currentSeason.nextFixtureIndex
+            val nextSeason = runner.playNextMatchday(currentState.currentSeason)
+            val userMatchResult = nextSeason.results.lastOrNull {
+                it.homeClubId == currentState.humanClubId || it.awayClubId == currentState.humanClubId
             }
-            val updatedGame = state.game.copy(
-                clubs = worldSeason.clubs,
-                players = worldSeason.players,
-                currentSeason = worldSeason,
-                currentDate = worldSeason.currentDate,
+            val updatedGame = currentState.game.copy(
+                clubs = nextSeason.clubs,
+                players = nextSeason.players,
+                currentSeason = nextSeason,
+                currentDate = nextSeason.currentDate,
             )
             gameRepository.saveGame(updatedGame)
-            state.copy(
-                game = updatedGame,
-                currentSeason = worldSeason,
-                lastMatchResult = userMatchResult,
-                selectedStarterPlayerId = null,
-            )
+            _uiState.update {
+                it.copy(
+                    game = updatedGame,
+                    currentSeason = nextSeason,
+                    lastMatchResult = userMatchResult,
+                    selectedStarterPlayerId = null,
+                    lineupValidationError = null,
+                    isSimulating = false,
+                    saveStatusMessage = "Autosaved after matchday ${nextSeason.nextMatchday ?: "complete"}",
+                )
+            }
+        } finally {
+            isSimulatingInFlight = false
+            _uiState.update { it.copy(isSimulating = false) }
         }
+    }
+
+    // ── Persistence: Save & Load Career ──────────────────────────────────
+    fun saveCareer(slot: SaveSlot = SaveSlot.MANUAL) {
+        try {
+            val state = _uiState.value
+            gameRepository.saveGame(state.game)
+            _uiState.update { it.copy(saveStatusMessage = "Career saved successfully (${slot.name.lowercase()})") }
+        } catch (e: Exception) {
+            _uiState.update { it.copy(saveStatusMessage = "Failed to save: ${e.message}") }
+        }
+    }
+
+    fun loadCareer(slot: SaveSlot = SaveSlot.MANUAL) {
+        try {
+            val reloaded = gameRepository.reload()
+            val season = reloaded.currentSeason ?: error("No current season in save")
+            _uiState.update {
+                it.copy(
+                    game = reloaded,
+                    currentSeason = season,
+                    humanClubId = season.humanClubId ?: it.humanClubId,
+                    lastMatchResult = season.results.lastOrNull { r -> r.homeClubId == it.humanClubId || r.awayClubId == it.humanClubId },
+                    saveStatusMessage = "Career loaded successfully (${slot.name.lowercase()})",
+                    lineupValidationError = null,
+                )
+            }
+        } catch (e: Exception) {
+            _uiState.update { it.copy(saveStatusMessage = "Failed to load: ${e.message}") }
+        }
+    }
+
+    fun clearSaveStatus() {
+        _uiState.update { it.copy(saveStatusMessage = null) }
+    }
+
+    // ── Direct Transfers ──────────────────────────────────────────────────
+    fun executeDirectTransfer(playerId: Long, fromClubId: Long, toClubId: Long, fee: Long) {
+        if (isTransferringInFlight) return
+        isTransferringInFlight = true
+        try {
+            val state = _uiState.value
+            val updatedSeason = DirectTransferUseCase().execute(
+                season = state.currentSeason,
+                request = DirectTransferRequest(
+                    playerId = playerId,
+                    fromClubId = fromClubId,
+                    toClubId = toClubId,
+                    transferFee = fee,
+                ),
+            )
+            val updatedGame = state.game.copy(
+                clubs = updatedSeason.clubs,
+                players = updatedSeason.players,
+                currentSeason = updatedSeason,
+            )
+            gameRepository.saveGame(updatedGame)
+            _uiState.update {
+                it.copy(
+                    game = updatedGame,
+                    currentSeason = updatedSeason,
+                    transferSuccessMessage = "Transferred player successfully!",
+                    transferErrorMessage = null,
+                )
+            }
+        } catch (e: Exception) {
+            _uiState.update {
+                it.copy(
+                    transferErrorMessage = e.message ?: "Transfer failed",
+                    transferSuccessMessage = null,
+                )
+            }
+        } finally {
+            isTransferringInFlight = false
+        }
+    }
+
+    fun clearTransferFeedback() {
+        _uiState.update { it.copy(transferErrorMessage = null, transferSuccessMessage = null) }
     }
 
     fun advanceDay() {

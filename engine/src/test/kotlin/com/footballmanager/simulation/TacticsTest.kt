@@ -12,6 +12,9 @@ class TacticsTest {
         val team = Team(1, 70, 60)
         assertEquals(Formation.FOUR_FOUR_TWO, team.tactics.formation)
         assertEquals(Mentality.BALANCED, team.tactics.mentality)
+        assertEquals(Tempo.NORMAL, team.tactics.tempo)
+        assertEquals(Pressing.MEDIUM, team.tactics.pressing)
+        assertEquals(Passing.MIXED, team.tactics.passing)
         assertEquals(70, team.effectiveAttack())
         assertEquals(60, team.effectiveDefense())
     }
@@ -24,9 +27,8 @@ class TacticsTest {
     }
 
     @Test
-    fun `defensive formation lowers attack and boosts defense`() {
-        val team = Team(1, 70, 70, Tactics(Formation.FIVE_THREE_TWO, Mentality.BALANCED))
-        assertTrue(team.effectiveAttack() < team.attack)
+    fun `defensive formation boosts defense`() {
+        val team = Team(1, 70, 70, Tactics(Formation.THREE_FIVE_TWO, Mentality.BALANCED))
         assertTrue(team.effectiveDefense() > team.defense)
     }
 
@@ -55,7 +57,7 @@ class TacticsTest {
             listOf(
                 Position.GK,
                 Position.LB, Position.CB, Position.CB, Position.RB,
-                Position.LM, Position.CM, Position.CM, Position.RM,
+                Position.LW, Position.CM, Position.CM, Position.RW,
                 Position.ST, Position.ST,
             ),
             Formation.FOUR_FOUR_TWO.slots,
@@ -65,7 +67,7 @@ class TacticsTest {
             listOf(
                 Position.GK,
                 Position.LB, Position.CB, Position.CB, Position.RB,
-                Position.CDM, Position.CM, Position.CAM,
+                Position.DM, Position.CM, Position.AM,
                 Position.LW, Position.ST, Position.RW,
             ),
             Formation.FOUR_THREE_THREE.slots,
@@ -74,11 +76,22 @@ class TacticsTest {
         assertEquals(
             listOf(
                 Position.GK,
-                Position.LWB, Position.CB, Position.CB, Position.CB, Position.RWB,
-                Position.CM, Position.CM, Position.CM,
+                Position.LB, Position.CB, Position.CB, Position.RB,
+                Position.DM, Position.CM,
+                Position.LW, Position.AM, Position.RW,
+                Position.ST,
+            ),
+            Formation.FOUR_TWO_THREE_ONE.slots,
+        )
+
+        assertEquals(
+            listOf(
+                Position.GK,
+                Position.CB, Position.CB, Position.CB,
+                Position.LB, Position.DM, Position.CM, Position.AM, Position.RB,
                 Position.ST, Position.ST,
             ),
-            Formation.FIVE_THREE_TWO.slots,
+            Formation.THREE_FIVE_TWO.slots,
         )
     }
 }

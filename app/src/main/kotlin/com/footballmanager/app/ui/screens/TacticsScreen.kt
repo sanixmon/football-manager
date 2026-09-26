@@ -3,6 +3,7 @@ package com.footballmanager.app.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -57,7 +58,9 @@ import com.footballmanager.model.Player
 import com.footballmanager.model.PositionGroup
 import com.footballmanager.simulation.Formation
 import com.footballmanager.simulation.Mentality
-
+import com.footballmanager.simulation.Passing
+import com.footballmanager.simulation.Pressing
+import com.footballmanager.simulation.Tempo
 @Composable
 fun TacticsScreen(
     state: GameUiState,
@@ -66,6 +69,9 @@ fun TacticsScreen(
     onAutoSelect: () -> Unit,
     onStarterClick: (Long) -> Unit,
     onBenchClick: (Long) -> Unit,
+    onTempoSelected: (Tempo) -> Unit = {},
+    onPressingSelected: (Pressing) -> Unit = {},
+    onPassingSelected: (Passing) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val currentFormation = state.humanTeam.tactics.formation
@@ -77,6 +83,17 @@ fun TacticsScreen(
             .fillMaxSize()
             .background(FmDarkBg),
     ) {
+        if (state.lineupValidationError != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(FmRatingLow.copy(alpha = 0.2f))
+                    .border(1.dp, FmRatingLow)
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+            ) {
+                Text(text = "⚠️ ${state.lineupValidationError}", color = FmRatingLow, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            }
+        }
         // ─── Formation & Mentality Controls ───────────────────────────────
         Column(
             modifier = Modifier
@@ -138,6 +155,27 @@ fun TacticsScreen(
                         onClick = { onMentalitySelected(m) },
                         selectedColor = FmRatingMed,
                     )
+                }
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("TEMPO", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 10.sp)
+                Tempo.entries.forEach { t ->
+                    Box_chip(label = t.label, isSelected = state.humanTeam.tactics.tempo == t, onClick = { onTempoSelected(t) })
+                }
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("PRESSING", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 10.sp)
+                Pressing.entries.forEach { p ->
+                    Box_chip(label = p.label, isSelected = state.humanTeam.tactics.pressing == p, onClick = { onPressingSelected(p) })
+                }
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("PASSING", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 10.sp)
+                Passing.entries.forEach { pass ->
+                    Box_chip(label = pass.label, isSelected = state.humanTeam.tactics.passing == pass, onClick = { onPassingSelected(pass) })
                 }
             }
         }

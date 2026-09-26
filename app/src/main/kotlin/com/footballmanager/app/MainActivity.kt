@@ -69,13 +69,18 @@ class MainActivity : ComponentActivity() {
                             onAutoSelect = viewModel::autoSelectBestXI,
                             onStarterClick = viewModel::onStarterSelected,
                             onBenchClick = viewModel::swapWithBench,
+                            onTempoSelected = viewModel::updateTempo,
+                            onPressingSelected = viewModel::updatePressing,
+                            onPassingSelected = viewModel::updatePassing,
+                            onDirectTransfer = viewModel::executeDirectTransfer,
+                            onSaveCareer = { viewModel.saveCareer() },
+                            onLoadCareer = { viewModel.loadCareer() },
                             onSubmitBid = viewModel::submitTransferBid,
                             onOfferContract = viewModel::offerContractTerms,
                             onCompleteDeal = viewModel::completeTransferDeal,
                             onCancelDeal = viewModel::cancelTransferDeal,
                             onRolloverSeason = viewModel::rolloverToNextSeason,
                             onMainMenuClick = { viewModel.goToAppScreen(com.footballmanager.app.ui.viewmodel.AppScreen.MAIN_MENU) },
-                            modifier = Modifier.fillMaxSize(),
                         )
                     }
                 }

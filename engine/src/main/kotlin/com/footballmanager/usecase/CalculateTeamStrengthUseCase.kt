@@ -49,7 +49,8 @@ class CalculateTeamStrengthUseCase(
 
     fun calculateFromSquad(players: List<Player>, tactics: Tactics = Tactics()): TeamStrength {
         val lineup = selectLineupUseCase(players, tactics)
-        val playerMap = players.associateBy { it.id }
+        val emergencyGk = if (lineup.starters.isNotEmpty() && lineup.starters.first() < 0) listOf(com.footballmanager.model.EmergencyGoalkeeper.create(id = lineup.starters.first())) else emptyList()
+        val playerMap = (players + emergencyGk).associateBy { it.id }
         val starters = lineup.starters.map { playerMap.getValue(it) }
         return calculateFromStarters(starters, tactics)
     }

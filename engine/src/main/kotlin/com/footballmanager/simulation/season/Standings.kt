@@ -35,6 +35,7 @@ data class Standings(
             compareByDescending<StandingEntry> { it.points }
                 .thenByDescending { it.goalDifference }
                 .thenByDescending { it.goalsFor }
+                .thenBy { it.team.clubId }
 
         fun compute(
             teams: List<Team>,

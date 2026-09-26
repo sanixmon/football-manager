@@ -33,7 +33,7 @@ fun main() {
     val plans = listOf(
         Tactics(Formation.FOUR_THREE_THREE, Mentality.ATTACKING),
         Tactics(Formation.FOUR_FOUR_TWO, Mentality.BALANCED),
-        Tactics(Formation.FIVE_THREE_TWO, Mentality.DEFENSIVE),
+        Tactics(Formation.THREE_FIVE_TWO, Mentality.DEFENSIVE),
     )
 
     var state = runner.start(league, teams, SeedData.START_DATE, humanClubId, clubs = game.clubs, players = game.players)

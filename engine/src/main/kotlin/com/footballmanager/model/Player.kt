@@ -23,6 +23,22 @@ data class Contract(
 )
 
 @Serializable
+data class InjuryStatus(
+    val description: String = "Injured",
+    val daysRemaining: Int,
+) {
+    val isInjured: Boolean get() = daysRemaining > 0
+}
+
+@Serializable
+data class SuspensionStatus(
+    val matchesRemaining: Int,
+    val reason: String = "Suspension",
+) {
+    val isSuspended: Boolean get() = matchesRemaining > 0
+}
+
+@Serializable
 data class Player(
     val id: Long,
     val name: String,
@@ -33,6 +49,10 @@ data class Player(
     val contract: Contract,
     val fitness: Int = 100,
     val morale: Int = 50,
+    val potential: Int = 75,
+    val form: Int = 60,
+    val injuryStatus: InjuryStatus? = null,
+    val suspensionStatus: SuspensionStatus? = null,
     /** Optional external graphics id (e.g. a community facepack id). */
     val graphicsId: Long? = null,
 ) {
@@ -41,6 +61,11 @@ data class Player(
         require(age > 0) { "player age must be positive" }
         require(naturalPositions.isNotEmpty()) { "player must have at least one natural position" }
     }
+
+    val isInjured: Boolean get() = injuryStatus?.isInjured == true
+    val isSuspended: Boolean get() = suspensionStatus?.isSuspended == true
+    val isAvailable: Boolean get() = !isInjured && !isSuspended
+    val isEmergency: Boolean get() = id < 0
 
     /** Overall rating when played in [position]. */
     fun overall(position: Position): Int = attributes.overall(position)

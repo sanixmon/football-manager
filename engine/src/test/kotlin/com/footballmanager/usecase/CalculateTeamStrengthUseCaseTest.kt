@@ -17,8 +17,8 @@ class CalculateTeamStrengthUseCaseTest {
     private fun createStarters(rating: Int): List<Player> {
         val positions = listOf(
             Position.GK, Position.LB, Position.CB, Position.CB, Position.RB,
-            Position.LM, Position.CM, Position.CM, Position.RM,
-            Position.ST, Position.ST
+            Position.LW, Position.CM, Position.CM, Position.RW,
+            Position.ST, Position.ST,
         )
         return positions.mapIndexed { index, pos ->
             Player(

@@ -9,18 +9,13 @@ class OverallTest {
 
     private val strikerAttributes = PlayerAttributes(
         mapOf(
-            Attribute.FINISHING to 90,
+            Attribute.SHOOTING to 90,
             Attribute.PACE to 85,
-            Attribute.ACCELERATION to 85,
-            Attribute.POSITIONING to 80,
-            Attribute.STRENGTH to 70,
-            Attribute.FIRST_TOUCH to 80,
-            Attribute.DRIBBLING to 75,
-            Attribute.PASSING to 65,
-            Attribute.DECISION_MAKING to 75,
-            Attribute.COMPOSURE to 80,
-            Attribute.WORK_RATE to 70,
-            Attribute.TACKLING to 20,
+            Attribute.DRIBBLING to 80,
+            Attribute.PHYSICAL to 75,
+            Attribute.PASSING to 70,
+            Attribute.DEFENDING to 25,
+            Attribute.GOALKEEPER to 10,
         ),
     )
 

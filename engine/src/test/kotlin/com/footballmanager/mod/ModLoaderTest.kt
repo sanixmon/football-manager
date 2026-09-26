@@ -23,16 +23,16 @@ class ModLoaderTest {
                     formation = "4-3-3",
                     mentality = "Attacking",
                     players = listOf(
-                        ModPlayer("Striker", "ST", age = 26, attributes = mapOf("FINISHING" to 90, "PACE" to 85)),
-                        ModPlayer("Keeper", "GK", attributes = mapOf("POSITIONING" to 80)),
+                        ModPlayer("Striker", "ST", age = 26, attributes = mapOf("SHOOTING" to 90, "PACE" to 85)),
+                        ModPlayer("Keeper", "GK", attributes = mapOf("GOALKEEPER" to 80)),
                     ),
                 ),
                 ModClub(
                     name = "Beta",
                     shortName = "BET",
-                    formation = "5-3-2",
+                    formation = "3-5-2",
                     mentality = "Defensive",
-                    players = listOf(ModPlayer("Defender", "CB", attributes = mapOf("TACKLING" to 88))),
+                    players = listOf(ModPlayer("Defender", "CB", attributes = mapOf("DEFENDING" to 88))),
                 ),
             ),
         )
@@ -51,17 +51,17 @@ class ModLoaderTest {
         assertEquals(2, game.squad(alpha.id).size)
 
         val beta = game.clubs.getValue(2L)
-        assertEquals(Formation.FIVE_THREE_TWO, beta.defaultTactics?.formation)
+        assertEquals(Formation.THREE_FIVE_TWO, beta.defaultTactics?.formation)
         assertEquals(Mentality.DEFENSIVE, beta.defaultTactics?.mentality)
 
         // player ids are assigned in file order
         val striker = game.players.getValue(1L)
         assertEquals("Striker", striker.name)
         assertEquals(Position.ST, striker.bestPosition())
-        assertEquals(90, striker.attributes[Attribute.FINISHING])
+        assertEquals(90, striker.attributes[Attribute.SHOOTING])
         assertEquals(85, striker.attributes[Attribute.PACE])
         // omitted attributes default to the minimum
-        assertEquals(1, striker.attributes[Attribute.TACKLING])
+        assertEquals(1, striker.attributes[Attribute.DEFENDING])
     }
 
     @Test

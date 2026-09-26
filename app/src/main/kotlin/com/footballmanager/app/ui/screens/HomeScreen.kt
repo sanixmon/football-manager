@@ -2,6 +2,7 @@ package com.footballmanager.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,19 +15,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.FitnessCenter
+import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.outlined.SportsSoccer
 import androidx.compose.material.icons.outlined.TrendingUp
+import androidx.compose.material.icons.outlined.Upload
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -36,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.footballmanager.app.ui.components.FmNavSection
 import com.footballmanager.app.ui.theme.FmAccentBlue
 import com.footballmanager.app.ui.theme.FmAccentCyan
 import com.footballmanager.app.ui.theme.FmBorder
@@ -45,7 +49,6 @@ import com.footballmanager.app.ui.theme.FmRatingHigh
 import com.footballmanager.app.ui.theme.FmRatingLow
 import com.footballmanager.app.ui.theme.FmRatingMed
 import com.footballmanager.app.ui.theme.FmSurface
-import com.footballmanager.app.ui.theme.FmSurfaceAlt
 import com.footballmanager.app.ui.theme.FmSurfaceSelected
 import com.footballmanager.app.ui.theme.FmTextMuted
 import com.footballmanager.app.ui.theme.FmTextPrimary
@@ -56,6 +59,9 @@ import com.footballmanager.app.ui.viewmodel.GameUiState
 fun HomeScreen(
     state: GameUiState,
     onNavigateToMatchday: () -> Unit,
+    onNavigateToSection: (FmNavSection) -> Unit = {},
+    onSaveCareer: () -> Unit = {},
+    onLoadCareer: () -> Unit = {},
     onRolloverSeason: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -68,7 +74,10 @@ fun HomeScreen(
     val avgFitness = if (squad.isNotEmpty()) squad.map { it.fitness }.average().toInt() else 100
     val avgMorale = if (squad.isNotEmpty()) squad.map { it.morale }.average().toInt() else 50
 
-    // Season position
+    val availableCount = squad.count { it.isAvailable }
+    val injuredCount = squad.count { it.isInjured }
+    val suspendedCount = squad.count { it.isSuspended }
+
     val standings = season.standings.entries
     val myEntry = standings.firstOrNull { it.team.clubId == state.humanClubId }
     val myPosition = standings.indexOfFirst { it.team.clubId == state.humanClubId } + 1
@@ -79,6 +88,19 @@ fun HomeScreen(
             .background(FmDarkBg)
             .verticalScroll(rememberScrollState()),
     ) {
+        // ─── Status Notification Banner ───────────────────────────────────
+        state.saveStatusMessage?.let { msg ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(FmAccentBlue.copy(alpha = 0.2f))
+                    .border(1.dp, FmAccentBlue)
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+            ) {
+                Text(msg, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+            }
+        }
+
         // ─── Club Hero Strip ──────────────────────────────────────────────
         Column(
             modifier = Modifier
@@ -145,7 +167,6 @@ fun HomeScreen(
             val isHome = nextFixture.home.clubId == club.id
             val opponent = state.game.club(opponentId)
             val isToday = state.isMatchdayToday
-            val daysLeft = state.daysUntilNextMatch
 
             Column(
                 modifier = Modifier
@@ -163,84 +184,57 @@ fun HomeScreen(
                         "NEXT MATCH — ROUND $nextMatchday",
                         style = MaterialTheme.typography.labelSmall,
                         color = if (isToday) FmContinueGreen else FmAccentBlue,
+                        fontWeight = FontWeight.Bold,
                         fontSize = 10.sp,
                         letterSpacing = 1.sp,
-                        fontWeight = FontWeight.Bold,
                     )
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(if (isToday) FmContinueGreen else Color(0xFF1E293B))
-                            .padding(horizontal = 6.dp, vertical = 2.dp),
-                    ) {
-                        Text(
-                            text = if (isToday) "MATCHDAY TODAY" else "IN $daysLeft DAYS",
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isToday) Color.Black else FmAccentCyan,
-                        )
-                    }
+                    Text(
+                        if (isHome) "HOME" else "AWAY",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = FmTextSecondary,
+                        fontSize = 10.sp,
+                    )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(club.name, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        Text(if (isHome) "HOME" else "AWAY", style = MaterialTheme.typography.bodySmall, color = FmContinueGreen, fontSize = 10.sp)
+                    Column {
+                        Text(
+                            text = if (isHome) "${club.name}  vs  ${opponent.name}" else "${opponent.name}  vs  ${club.name}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            fontSize = 15.sp,
+                        )
+                        Text(
+                            text = "Fixture Date: ${nextFixture.date}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = FmTextSecondary,
+                            fontSize = 11.sp,
+                        )
                     }
-                    Text("VS", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 12.sp, fontWeight = FontWeight.Black)
-                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
-                        Text(opponent.name, style = MaterialTheme.typography.titleMedium, color = FmTextPrimary, fontSize = 13.sp)
-                        Text("${nextFixture.date}", style = MaterialTheme.typography.bodySmall, color = FmTextMuted, fontSize = 10.sp)
-                    }
-                }
 
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = if (isToday) "⚡ Matchday is here! Tap PLAY MATCH in the top bar to simulate."
-                           else "⏳ Daily training in progress. Tap CONTINUE in the top bar to advance 1 day and recover stamina.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (isToday) FmContinueGreen else FmTextMuted,
-                    fontSize = 11.sp,
-                )
-            }
-        } else if (season.isFinished) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(FmRatingHigh.copy(alpha = 0.15f))
-                    .border(1.dp, FmRatingHigh, RoundedCornerShape(0.dp))
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Text(
-                    "SEASON COMPLETE — Final Position: #$myPosition",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = FmRatingHigh,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    "Prize money distributed, young players promoted from academy. Advance to next year's campaign.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = FmTextPrimary,
-                )
-                androidx.compose.material3.Button(
-                    onClick = onRolloverSeason,
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = FmContinueGreen),
-                    shape = RoundedCornerShape(6.dp),
-                ) {
-                    Text("START NEXT SEASON >", fontWeight = FontWeight.Bold)
+                    Button(
+                        onClick = onNavigateToMatchday,
+                        colors = ButtonDefaults.buttonColors(containerColor = FmContinueGreen),
+                        shape = RoundedCornerShape(4.dp),
+                    ) {
+                        Icon(Icons.Outlined.PlayArrow, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("MATCH", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                    }
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(1.dp))
 
-        // ─── Squad Condition ──────────────────────────────────────────────
+        // ─── Squad Availability & Condition ───────────────────────────────
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -248,53 +242,97 @@ fun HomeScreen(
                 .border(1.dp, FmBorder)
                 .padding(horizontal = 14.dp, vertical = 12.dp),
         ) {
-            Text("SQUAD CONDITION", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 10.sp, letterSpacing = 1.sp)
+            Text("SQUAD AVAILABILITY & CONDITION", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 10.sp, letterSpacing = 1.sp)
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+                KeyStat("Available", "$availableCount", FmContinueGreen)
+                KeyStat("Injured", "$injuredCount", if (injuredCount > 0) FmRatingLow else FmTextMuted)
+                KeyStat("Suspended", "$suspendedCount", if (suspendedCount > 0) FmRatingLow else FmTextMuted)
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            HorizontalDivider(color = FmBorder, thickness = 1.dp)
             Spacer(modifier = Modifier.height(10.dp))
 
             ConditionGauge("Average Fitness", avgFitness, Icons.Outlined.FitnessCenter)
             Spacer(modifier = Modifier.height(8.dp))
             ConditionGauge("Average Morale", avgMorale, Icons.Outlined.TrendingUp)
-
-            Spacer(modifier = Modifier.height(10.dp))
-            HorizontalDivider(color = FmBorder, thickness = 1.dp)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("${squad.size} players in squad", style = MaterialTheme.typography.bodySmall, color = FmTextMuted, fontSize = 11.sp)
         }
 
         Spacer(modifier = Modifier.height(1.dp))
 
-        // ─── Last Result ──────────────────────────────────────────────────
-        val lastResult = state.lastMatchResult
-        if (lastResult != null) {
-            val homeClub = state.game.club(lastResult.homeClubId)
-            val awayClub = state.game.club(lastResult.awayClubId)
-            val userIsHome = lastResult.homeClubId == state.humanClubId
-            val userWon = (userIsHome && lastResult.isHomeWin) || (!userIsHome && lastResult.isAwayWin)
-            val resultColor = if (userWon) FmRatingHigh else if (lastResult.isDraw) FmRatingMed else FmRatingLow
-            val resultLabel = if (userWon) "WIN" else if (lastResult.isDraw) "DRAW" else "LOSS"
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(FmSurface)
-                    .border(1.dp, FmBorder),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(resultColor.copy(alpha = 0.12f))
-                        .padding(horizontal = 14.dp, vertical = 6.dp),
-                ) {
-                    Text("LAST RESULT — $resultLabel", style = MaterialTheme.typography.labelSmall, color = resultColor, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+        // ─── Club Finances ────────────────────────────────────────────────
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(FmSurface)
+                .border(1.dp, FmBorder)
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+        ) {
+            Text("FINANCES", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 10.sp, letterSpacing = 1.sp)
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column {
+                    Text("Club Balance", style = MaterialTheme.typography.bodySmall, color = FmTextMuted, fontSize = 11.sp)
+                    Text("$${"%,d".format(state.humanFinance.balance)}", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
                 }
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("Transfer Budget", style = MaterialTheme.typography.bodySmall, color = FmTextMuted, fontSize = 11.sp)
+                    Text("$${"%,d".format(state.humanFinance.transferBudget)}", style = MaterialTheme.typography.titleMedium, color = FmContinueGreen, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(1.dp))
+
+        // ─── Quick Actions & Save/Load ─────────────────────────────────────
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(FmSurface)
+                .border(1.dp, FmBorder)
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+        ) {
+            Text("QUICK NAVIGATION & SAVE", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 10.sp, letterSpacing = 1.sp)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                OutlinedButton(onClick = { onNavigateToSection(FmNavSection.SQUAD) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(4.dp)) {
+                    Text("Squad", fontSize = 11.sp, color = FmTextPrimary)
+                }
+                OutlinedButton(onClick = { onNavigateToSection(FmNavSection.TACTICS) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(4.dp)) {
+                    Text("Tactics", fontSize = 11.sp, color = FmTextPrimary)
+                }
+                OutlinedButton(onClick = { onNavigateToSection(FmNavSection.LEAGUE) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(4.dp)) {
+                    Text("League", fontSize = 11.sp, color = FmTextPrimary)
+                }
+                OutlinedButton(onClick = { onNavigateToSection(FmNavSection.TRANSFERS) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(4.dp)) {
+                    Text("Transfers", fontSize = 11.sp, color = FmTextPrimary)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = onSaveCareer,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = FmAccentBlue),
+                    shape = RoundedCornerShape(4.dp),
                 ) {
-                    Text(homeClub.name, style = MaterialTheme.typography.bodyMedium, color = FmTextPrimary, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
-                    Text("${lastResult.homeScore}  –  ${lastResult.awayScore}", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Black)
-                    Text(awayClub.name, style = MaterialTheme.typography.bodyMedium, color = FmTextPrimary, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                    Icon(Icons.Outlined.Save, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Save Career", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+                OutlinedButton(
+                    onClick = onLoadCareer,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(4.dp),
+                ) {
+                    Icon(Icons.Outlined.Upload, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Load Career", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FmTextPrimary)
                 }
             }
         }
@@ -306,31 +344,29 @@ fun HomeScreen(
 @Composable
 private fun KeyStat(label: String, value: String, color: Color = FmTextSecondary) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = MaterialTheme.typography.titleLarge, color = color, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-        Text(label, style = MaterialTheme.typography.bodySmall, color = FmTextMuted, fontSize = 10.sp)
+        Text(value, style = MaterialTheme.typography.titleMedium, color = color, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 10.sp)
     }
 }
 
 @Composable
 private fun ConditionGauge(label: String, value: Int, icon: androidx.compose.ui.graphics.vector.ImageVector) {
-    val color = when {
-        value >= 75 -> FmRatingHigh
-        value >= 50 -> FmRatingMed
-        else -> FmRatingLow
-    }
-    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(label, style = MaterialTheme.typography.bodySmall, color = FmTextSecondary, fontSize = 11.sp)
-                Text("$value / 100", style = MaterialTheme.typography.labelSmall, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Icon(icon, contentDescription = null, tint = FmAccentBlue, modifier = Modifier.size(14.dp))
+                Text(label, style = MaterialTheme.typography.bodySmall, color = FmTextPrimary, fontSize = 11.sp)
             }
-            Spacer(modifier = Modifier.height(3.dp))
-            LinearProgressIndicator(
-                progress = { value / 100f },
-                modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)),
-                color = color,
-                trackColor = FmBorder,
+            Text(
+                "$value%",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (value >= 75) FmRatingHigh else if (value >= 50) FmRatingMed else FmRatingLow,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp,
             )
         }
     }

@@ -53,6 +53,12 @@ fun SquadScreen(
     onAutoSelect: () -> Unit,
     onStarterClick: (Long) -> Unit,
     onBenchClick: (Long) -> Unit,
+    onTempoSelected: (com.footballmanager.simulation.Tempo) -> Unit = {},
+    onPressingSelected: (com.footballmanager.simulation.Pressing) -> Unit = {},
+    onPassingSelected: (com.footballmanager.simulation.Passing) -> Unit = {},
+    onDirectTransfer: (playerId: Long, fromClubId: Long, toClubId: Long, fee: Long) -> Unit = { _, _, _, _ -> },
+    onSaveCareer: () -> Unit = {},
+    onLoadCareer: () -> Unit = {},
     onSubmitBid: (playerId: Long, fee: Long) -> Unit = { _, _ -> },
     onOfferContract: (bidId: Long, weeklyWage: Long, years: Int, squadStatus: com.footballmanager.model.SquadStatus) -> Unit = { _, _, _, _ -> },
     onCompleteDeal: (bidId: Long) -> Unit = {},
@@ -179,6 +185,9 @@ fun SquadScreen(
                             onAutoSelect = onAutoSelect,
                             onStarterClick = onStarterClick,
                             onBenchClick = onBenchClick,
+                            onTempoSelected = onTempoSelected,
+                            onPressingSelected = onPressingSelected,
+                            onPassingSelected = onPassingSelected,
                             modifier = bodyModifier,
                         )
 
@@ -196,6 +205,9 @@ fun SquadScreen(
                         FmNavSection.HOME -> HomeScreen(
                             state = state,
                             onNavigateToMatchday = { onNavSection(FmNavSection.SCHEDULE) },
+                            onNavigateToSection = onNavSection,
+                            onSaveCareer = onSaveCareer,
+                            onLoadCareer = onLoadCareer,
                             onRolloverSeason = onRolloverSeason,
                             modifier = bodyModifier,
                         )
@@ -213,6 +225,7 @@ fun SquadScreen(
 
                         FmNavSection.TRANSFERS -> TransfersScreen(
                             state = state,
+                            onDirectTransfer = onDirectTransfer,
                             onOfferContract = onOfferContract,
                             onCompleteDeal = onCompleteDeal,
                             onCancelDeal = onCancelDeal,

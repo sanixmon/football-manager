@@ -59,23 +59,29 @@ import com.footballmanager.app.ui.theme.FmTextSecondary
 enum class FmNavSection(
     val title: String,
     val icon: ImageVector,
-    val group: String,
+    val group: String = "MENU",
 ) {
-    HOME("Home", Icons.Outlined.Home, "GENERAL"),
-    INBOX("Inbox", Icons.Outlined.Mail, "GENERAL"),
-    SQUAD("Squad", Icons.Outlined.Group, "TEAM"),
-    DYNAMICS("Dynamics", Icons.Outlined.Hub, "TEAM"),
-    TACTICS("Tactics", Icons.Outlined.SportsSoccer, "TEAM"),
-    DATA_HUB("Data Hub", Icons.Outlined.Analytics, "TEAM"),
-    STAFF("Staff", Icons.Outlined.SupervisorAccount, "OPERATIONS"),
-    TRAINING("Training", Icons.Outlined.FitnessCenter, "OPERATIONS"),
-    MEDICAL("Medical Centre", Icons.Outlined.LocalHospital, "OPERATIONS"),
-    SCHEDULE("Schedule", Icons.Outlined.CalendarMonth, "OPERATIONS"),
-    COMPETITIONS("Competitions", Icons.Outlined.EmojiEvents, "RECRUITMENT"),
-    SCOUTING("Scouting", Icons.Outlined.Search, "RECRUITMENT"),
-    TRANSFERS("Transfers", Icons.Outlined.SwapHoriz, "RECRUITMENT"),
-    CLUB_INFO("Club Info", Icons.Outlined.Shield, "CLUB"),
-    FINANCES("Finances", Icons.Outlined.AccountBalance, "CLUB"),
+    DASHBOARD("Dashboard", Icons.Outlined.Home),
+    SQUAD("Squad", Icons.Outlined.Group),
+    TACTICS("Tactics", Icons.Outlined.SportsSoccer),
+    MATCH("Match", Icons.Outlined.CalendarMonth),
+    LEAGUE("League", Icons.Outlined.EmojiEvents),
+    TRANSFERS("Transfers", Icons.Outlined.SwapHoriz);
+
+    companion object {
+        val HOME get() = DASHBOARD
+        val SCHEDULE get() = MATCH
+        val COMPETITIONS get() = LEAGUE
+        val INBOX get() = DASHBOARD
+        val SCOUTING get() = TRANSFERS
+        val FINANCES get() = DASHBOARD
+        val CLUB_INFO get() = DASHBOARD
+        val STAFF get() = SQUAD
+        val TRAINING get() = SQUAD
+        val MEDICAL get() = SQUAD
+        val DYNAMICS get() = SQUAD
+        val DATA_HUB get() = SQUAD
+    }
 }
 
 @Composable
@@ -113,26 +119,21 @@ fun FmNavigationDrawerContent(
 
         HorizontalDivider(color = FmBorder, thickness = 1.dp)
 
-        val groups = listOf("GENERAL", "TEAM", "OPERATIONS", "RECRUITMENT", "CLUB")
+        Text(
+            text = "CAREER MENU",
+            style = MaterialTheme.typography.labelSmall,
+            color = FmTextMuted,
+            fontSize = 10.sp,
+            modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp),
+        )
 
-        groups.forEach { groupName ->
-            Text(
-                text = groupName,
-                style = MaterialTheme.typography.labelSmall,
-                color = FmTextMuted,
-                fontSize = 10.sp,
-                modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp),
+        FmNavSection.entries.forEach { section ->
+            val isSelected = section == currentSection
+            FmNavItemRow(
+                section = section,
+                isSelected = isSelected,
+                onClick = { onSectionSelected(section) },
             )
-
-            val itemsInGroup = FmNavSection.entries.filter { it.group == groupName }
-            itemsInGroup.forEach { section ->
-                val isSelected = section == currentSection
-                FmNavItemRow(
-                    section = section,
-                    isSelected = isSelected,
-                    onClick = { onSectionSelected(section) },
-                )
-            }
         }
         Spacer(modifier = Modifier.height(16.dp))
         HorizontalDivider(color = FmBorder, thickness = 1.dp)
