@@ -47,6 +47,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.footballmanager.app.ui.theme.FmAccentBlue
+import com.footballmanager.app.ui.theme.FmAccentCyan
+import com.footballmanager.app.ui.theme.FmTopBarBg
 import com.footballmanager.app.ui.theme.FmBorder
 import com.footballmanager.app.ui.theme.FmDarkBg
 import com.footballmanager.app.ui.theme.FmSurface
@@ -246,5 +248,52 @@ private fun FmNavItemRow(
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
             fontSize = 12.sp,
         )
+    }
+}
+
+@Composable
+fun FmBottomNavigationBar(
+    currentSection: FmNavSection,
+    onSectionSelected: (FmNavSection) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .background(FmTopBarBg)
+            .border(width = 1.dp, color = FmBorder),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceAround,
+    ) {
+        FmNavSection.entries.forEach { section ->
+            val isSelected = section == currentSection
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .background(if (isSelected) FmSurfaceSelected.copy(alpha = 0.5f) else Color.Transparent)
+                    .clickable { onSectionSelected(section) }
+                    .padding(vertical = 3.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Icon(
+                    imageVector = section.icon,
+                    contentDescription = section.title,
+                    tint = if (isSelected) FmAccentCyan else FmTextMuted,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = section.title,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isSelected) Color.White else FmTextMuted,
+                    fontSize = 9.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    maxLines = 1,
+                )
+            }
+        }
     }
 }

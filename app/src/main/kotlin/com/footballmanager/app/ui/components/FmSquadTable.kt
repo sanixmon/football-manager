@@ -88,7 +88,7 @@ fun FmSquadTable(
 ) {
     var sortColumn by remember { mutableStateOf(SquadSortColumn.RATING) }
     var sortAscending by remember { mutableStateOf(false) }
-
+    var selectedGroupFilter by remember { mutableStateOf<PositionGroup?>(null) }
     fun toggleSort(column: SquadSortColumn) {
         if (sortColumn == column) {
             sortAscending = !sortAscending
@@ -98,7 +98,8 @@ fun FmSquadTable(
         }
     }
 
-    val sortedPlayers = remember(players, sortColumn, sortAscending) {
+    val sortedPlayers = remember(players, sortColumn, sortAscending, selectedGroupFilter) {
+        val filtered = if (selectedGroupFilter == null) players else players.filter { it.bestPosition().group == selectedGroupFilter }
         val comparator: Comparator<Player> = when (sortColumn) {
             SquadSortColumn.POSITION -> compareBy { it.bestPosition().ordinal }
             SquadSortColumn.NAME -> compareBy { it.name }
@@ -109,7 +110,7 @@ fun FmSquadTable(
             SquadSortColumn.WAGE -> compareBy { it.contract.weeklyWage }
             SquadSortColumn.VALUE -> compareBy { it.bestOverall() * 100_000_000L }
         }
-        if (sortAscending) players.sortedWith(comparator) else players.sortedWith(comparator.reversed())
+        if (sortAscending) filtered.sortedWith(comparator) else filtered.sortedWith(comparator.reversed())
     }
 
     LazyColumn(
@@ -117,6 +118,46 @@ fun FmSquadTable(
             .fillMaxSize()
             .background(FmDarkBg),
     ) {
+        // Filter Chips Row
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF141820))
+                    .border(width = 1.dp, color = FmBorder)
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text("FILTER:", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 9.sp)
+                val filterOptions = listOf(
+                    null to "ALL",
+                    PositionGroup.GOALKEEPER to "GK",
+                    PositionGroup.DEFENDER to "DEF",
+                    PositionGroup.MIDFIELDER to "MID",
+                    PositionGroup.ATTACKER to "ATT",
+                )
+                filterOptions.forEach { (grp, label) ->
+                    val isSelected = selectedGroupFilter == grp
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(if (isSelected) FmAccentBlue else FmSurfaceAlt)
+                            .border(1.dp, if (isSelected) FmAccentCyan else FmBorder, RoundedCornerShape(3.dp))
+                            .clickable { selectedGroupFilter = grp }
+                            .padding(horizontal = 8.dp, vertical = 3.dp),
+                    ) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isSelected) Color.White else FmTextSecondary,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = 9.5.sp,
+                        )
+                    }
+                }
+            }
+        }
         // Sticky Header Row with Sort Indicators
         stickyHeader {
             Row(

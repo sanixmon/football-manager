@@ -227,6 +227,45 @@ fun PlayerDetailContent(
             Spacer(modifier = Modifier.height(10.dp))
             AttributeSection("GOALKEEPING", gkAttributes, player)
         }
+        Spacer(modifier = Modifier.height(14.dp))
+        HorizontalDivider(color = FmBorder, thickness = 1.dp)
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Current Status & Condition
+        Text(
+            text = "STATUS & AVAILABILITY",
+            style = MaterialTheme.typography.labelSmall,
+            color = FmAccentBlue,
+            fontSize = 11.sp,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Column {
+                Text("Condition", style = MaterialTheme.typography.bodySmall, color = FmTextMuted, fontSize = 10.sp)
+                Text("${player.fitness}%", style = MaterialTheme.typography.titleMedium, color = if (player.fitness >= 80) FmRatingHigh else FmRatingMed, fontWeight = FontWeight.Bold)
+            }
+            Column {
+                Text("Form", style = MaterialTheme.typography.bodySmall, color = FmTextMuted, fontSize = 10.sp)
+                Text("${player.form}", style = MaterialTheme.typography.titleMedium, color = if (player.form >= 70) FmRatingHigh else if (player.form < 55) FmRatingLow else FmTextPrimary, fontWeight = FontWeight.Bold)
+            }
+            Column {
+                Text("Potential", style = MaterialTheme.typography.bodySmall, color = FmTextMuted, fontSize = 10.sp)
+                Text("${player.potential}", style = MaterialTheme.typography.titleMedium, color = FmAccentCyan, fontWeight = FontWeight.Bold)
+            }
+            Column {
+                Text("Availability", style = MaterialTheme.typography.bodySmall, color = FmTextMuted, fontSize = 10.sp)
+                val availText = when {
+                    player.isInjured -> "Injured (${player.injuryStatus?.daysRemaining}d)"
+                    player.isSuspended -> "Suspended (${player.suspensionStatus?.matchesRemaining}m)"
+                    else -> "Available"
+                }
+                val availColor = if (player.isAvailable) FmRatingHigh else FmRatingLow
+                Text(availText, style = MaterialTheme.typography.titleMedium, color = availColor, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+            }
+        }
         Spacer(modifier = Modifier.height(16.dp))
         HorizontalDivider(color = FmBorder, thickness = 1.dp)
         Spacer(modifier = Modifier.height(14.dp))

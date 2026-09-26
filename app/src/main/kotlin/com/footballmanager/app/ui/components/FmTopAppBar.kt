@@ -13,12 +13,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Menu
-import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,7 +35,9 @@ import com.footballmanager.app.ui.theme.FmAccentBlue
 import com.footballmanager.app.ui.theme.FmAccentCyan
 import com.footballmanager.app.ui.theme.FmBorder
 import com.footballmanager.app.ui.theme.FmContinueGreen
-import com.footballmanager.app.ui.theme.FmRatingLow
+import com.footballmanager.app.ui.theme.FmRatingHigh
+import com.footballmanager.app.ui.theme.FmSurface
+import com.footballmanager.app.ui.theme.FmSurfaceAlt
 import com.footballmanager.app.ui.theme.FmTextMuted
 import com.footballmanager.app.ui.theme.FmTextPrimary
 import com.footballmanager.app.ui.theme.FmTextSecondary
@@ -45,8 +46,12 @@ import com.footballmanager.app.ui.theme.FmTopBarBg
 @Composable
 fun FmTopAppBar(
     clubName: String,
-    breadcrumb: String,
     currentDateText: String,
+    breadcrumb: String = "",
+    leaguePosition: Int = 1,
+    leaguePoints: Int = 0,
+    balanceText: String = "",
+    budgetText: String = "",
     onMenuClick: (() -> Unit)? = null,
     continueButtonText: String = "CONTINUE",
     continueButtonColor: Color = FmContinueGreen,
@@ -54,137 +59,146 @@ fun FmTopAppBar(
     onContinueClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp)
             .background(FmTopBarBg)
-            .border(width = 1.dp, color = FmBorder)
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .border(width = 1.dp, color = FmBorder),
     ) {
-        // Left: Menu Hamburger (if mobile) + Club Crest + Club Name & Breadcrumb
         Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            if (onMenuClick != null) {
-                IconButton(
-                    onClick = onMenuClick,
-                    modifier = Modifier.size(36.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Menu,
-                        contentDescription = "Menu",
-                        tint = FmTextPrimary,
-                    )
-                }
-                Spacer(modifier = Modifier.width(6.dp))
-            }
-
-            // Club Crest Shield Badge
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(FmAccentBlue.copy(alpha = 0.2f))
-                    .border(1.dp, FmAccentBlue.copy(alpha = 0.6f), RoundedCornerShape(6.dp)),
-                contentAlignment = Alignment.Center,
+            // ── Left: Menu Drawer Toggle + Club Identity ──────────────────
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.weight(1.2f),
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.Shield,
-                    contentDescription = null,
-                    tint = FmAccentCyan,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-
-            Spacer(modifier = Modifier.width(10.dp))
-
-            Column(verticalArrangement = Arrangement.Center) {
-                Text(
-                    text = clubName,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = FmTextPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                )
-                Text(
-                    text = breadcrumb,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = FmTextSecondary,
-                    fontSize = 11.sp,
-                )
-            }
-        }
-
-        // Right: Notification Icon + In-Game Date + Continue CTA Button
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            // Notification with badge dot
-            Box(contentAlignment = Alignment.TopEnd) {
-                IconButton(
-                    onClick = { /* Notification action */ },
-                    modifier = Modifier.size(36.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Notifications,
-                        contentDescription = "Notifications",
-                        tint = FmTextSecondary,
-                    )
+                if (onMenuClick != null) {
+                    IconButton(
+                        onClick = onMenuClick,
+                        modifier = Modifier.size(34.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Menu,
+                            contentDescription = "Menu",
+                            tint = FmTextPrimary,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
                 }
+
                 Box(
                     modifier = Modifier
-                        .size(8.dp)
-                        .background(FmRatingLow, shape = CircleShape)
-                        .border(1.dp, FmTopBarBg, CircleShape),
-                )
+                        .size(28.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(FmAccentBlue.copy(alpha = 0.2f))
+                        .border(1.dp, FmAccentBlue.copy(alpha = 0.5f), RoundedCornerShape(4.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Shield,
+                        contentDescription = null,
+                        tint = FmAccentCyan,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+
+                Column {
+                    Text(
+                        text = clubName,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                    )
+                    Text(
+                        text = if (breadcrumb.isNotBlank()) breadcrumb else "Liga Nusantara • $currentDateText",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = FmTextSecondary,
+                        fontSize = 9.5.sp,
+                        maxLines = 1,
+                    )
+                }
             }
 
-            // In-Game Date Badge
+            // ── Center / Meta: Contextual Badges ──────────────────────────
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.padding(horizontal = 4.dp),
+            ) {
+                // League Position Badge
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(FmSurfaceAlt)
+                        .border(1.dp, FmBorder, RoundedCornerShape(3.dp))
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                ) {
+                    Text(
+                        text = "#$leaguePosition • $leaguePoints pts",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (leaguePosition <= 3) FmRatingHigh else FmTextPrimary,
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+
+                // Balance Badge if provided
+                if (balanceText.isNotBlank()) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(FmSurfaceAlt)
+                            .border(1.dp, FmBorder, RoundedCornerShape(3.dp))
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    ) {
+                        Text(
+                            text = balanceText,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = FmContinueGreen,
+                            fontSize = 9.5.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+            }
+
+            // ── Right: FM Signature Continue Button ───────────────────────
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
-                    .background(Color(0xFF1E2229))
-                    .border(1.dp, FmBorder, RoundedCornerShape(4.dp))
-                    .padding(horizontal = 8.dp, vertical = 5.dp),
-            ) {
-                Text(
-                    text = currentDateText,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = FmTextSecondary,
-                    fontSize = 11.sp,
-                )
-            }
-
-            // FM Iconic CONTINUE Pill Button
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier
-                    .height(34.dp)
-                    .clip(RoundedCornerShape(17.dp))
                     .background(continueButtonColor)
-                    .clickable(onClick = onContinueClick)
-                    .padding(horizontal = 14.dp),
+                    .clickable { onContinueClick() }
+                    .padding(horizontal = 14.dp, vertical = 7.dp),
+                contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = continueButtonText,
-                    color = continueTextColor,
-                    fontWeight = FontWeight.Black,
-                    fontSize = 11.sp,
-                    letterSpacing = 0.5.sp,
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Icon(
-                    imageVector = Icons.Outlined.ChevronRight,
-                    contentDescription = null,
-                    tint = continueTextColor,
-                    modifier = Modifier.size(16.dp),
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = continueButtonText,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = continueTextColor,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 11.5.sp,
+                        letterSpacing = 0.5.sp,
+                    )
+                    Icon(
+                        imageVector = Icons.Outlined.ChevronRight,
+                        contentDescription = null,
+                        tint = continueTextColor,
+                        modifier = Modifier.size(14.dp),
+                    )
+                }
             }
         }
     }

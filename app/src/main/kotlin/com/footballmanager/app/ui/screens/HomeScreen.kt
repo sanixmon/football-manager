@@ -15,13 +15,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.FitnessCenter
+import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.SportsSoccer
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.Upload
 import androidx.compose.material3.Button
@@ -43,12 +49,18 @@ import com.footballmanager.app.ui.components.FmNavSection
 import com.footballmanager.app.ui.theme.FmAccentBlue
 import com.footballmanager.app.ui.theme.FmAccentCyan
 import com.footballmanager.app.ui.theme.FmBorder
+import com.footballmanager.app.ui.theme.FmBorderSubtle
+import com.footballmanager.app.ui.theme.FmCardBg
 import com.footballmanager.app.ui.theme.FmContinueGreen
 import com.footballmanager.app.ui.theme.FmDarkBg
+import com.footballmanager.app.ui.theme.FmFormDraw
+import com.footballmanager.app.ui.theme.FmFormLoss
+import com.footballmanager.app.ui.theme.FmFormWin
 import com.footballmanager.app.ui.theme.FmRatingHigh
 import com.footballmanager.app.ui.theme.FmRatingLow
 import com.footballmanager.app.ui.theme.FmRatingMed
 import com.footballmanager.app.ui.theme.FmSurface
+import com.footballmanager.app.ui.theme.FmSurfaceAlt
 import com.footballmanager.app.ui.theme.FmSurfaceSelected
 import com.footballmanager.app.ui.theme.FmTextMuted
 import com.footballmanager.app.ui.theme.FmTextPrimary
@@ -82,6 +94,10 @@ fun HomeScreen(
     val myEntry = standings.firstOrNull { it.team.clubId == state.humanClubId }
     val myPosition = standings.indexOfFirst { it.team.clubId == state.humanClubId } + 1
 
+    // Recent results (last 5)
+    val humanResults = season.results.filter { it.homeClubId == state.humanClubId || it.awayClubId == state.humanClubId }
+    val recent5 = humanResults.takeLast(5)
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -90,24 +106,27 @@ fun HomeScreen(
     ) {
         // ─── Status Notification Banner ───────────────────────────────────
         state.saveStatusMessage?.let { msg ->
-            Box(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(FmAccentBlue.copy(alpha = 0.2f))
+                    .background(FmSurfaceSelected)
                     .border(1.dp, FmAccentBlue)
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                    .padding(horizontal = 14.dp, vertical = 7.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(msg, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = FmAccentCyan, modifier = Modifier.size(16.dp))
+                Text(msg, color = Color.White, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
             }
         }
 
-        // ─── Club Hero Strip ──────────────────────────────────────────────
+        // ─── Club Overview Strip ──────────────────────────────────────────
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(FmSurface)
                 .border(1.dp, FmBorder)
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = 14.dp, vertical = 10.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -117,51 +136,58 @@ fun HomeScreen(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Box(
                         modifier = Modifier
-                            .size(44.dp)
-                            .clip(RoundedCornerShape(8.dp))
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(6.dp))
                             .background(FmAccentBlue.copy(alpha = 0.2f))
-                            .border(1.dp, FmAccentBlue.copy(alpha = 0.6f), RoundedCornerShape(8.dp)),
+                            .border(1.dp, FmAccentBlue.copy(alpha = 0.5f), RoundedCornerShape(6.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(Icons.Outlined.Shield, contentDescription = null, tint = FmAccentCyan, modifier = Modifier.size(26.dp))
+                        Icon(Icons.Outlined.Shield, contentDescription = null, tint = FmAccentCyan, modifier = Modifier.size(22.dp))
                     }
                     Column {
-                        Text(club.name, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text("Manager • Liga Nusantara", style = MaterialTheme.typography.bodySmall, color = FmTextSecondary, fontSize = 11.sp)
+                        Text(club.name, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Text(
+                            text = "${season.managerProfile?.name ?: "Head Coach"} • Season 2026/27 • ${season.currentDate}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = FmTextSecondary,
+                            fontSize = 10.5.sp,
+                        )
                     }
                 }
-                // League position badge
-                Column(horizontalAlignment = Alignment.End) {
-                    Text("POSITION", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 9.sp)
-                    Text(
-                        "#$myPosition",
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = if (myPosition <= 3) FmRatingHigh else if (myPosition <= 6) FmAccentCyan else FmTextPrimary,
-                        fontWeight = FontWeight.Black,
-                        fontSize = 22.sp,
-                    )
+
+                // Recent Form Pills (W D L)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("FORM", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 9.sp)
+                    if (recent5.isEmpty()) {
+                        Text("- - -", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 10.sp)
+                    } else {
+                        recent5.forEach { r ->
+                            val isHome = r.homeClubId == state.humanClubId
+                            val win = (isHome && r.isHomeWin) || (!isHome && r.isAwayWin)
+                            val draw = r.isDraw
+                            val (text, bg) = when {
+                                win -> "W" to FmFormWin
+                                draw -> "D" to FmFormDraw
+                                else -> "L" to FmFormLoss
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .size(18.dp)
+                                    .clip(CircleShape)
+                                    .background(bg),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(text, color = Color.Black, fontSize = 9.sp, fontWeight = FontWeight.Black)
+                            }
+                        }
+                    }
                 }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-            HorizontalDivider(color = FmBorder, thickness = 1.dp)
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Key stats strip
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                myEntry?.let { entry ->
-                    KeyStat("Played", "${entry.played}")
-                    KeyStat("Won", "${entry.won}", FmRatingHigh)
-                    KeyStat("Drawn", "${entry.drawn}", FmRatingMed)
-                    KeyStat("Lost", "${entry.lost}", FmRatingLow)
-                    KeyStat("Points", "${entry.points}", FmContinueGreen)
-                } ?: KeyStat("Season", "Starting", FmAccentBlue)
             }
         }
 
         Spacer(modifier = Modifier.height(1.dp))
 
-        // ─── Next Match Hero Card ─────────────────────────────────────────
+        // ─── Next Match Centerpiece ───────────────────────────────────────
         if (nextFixture != null && !season.isFinished) {
             val opponentId = if (nextFixture.home.clubId == club.id) nextFixture.away.clubId else nextFixture.home.clubId
             val isHome = nextFixture.home.clubId == club.id
@@ -180,30 +206,26 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("NEXT FIXTURE", style = MaterialTheme.typography.labelSmall, color = FmAccentCyan, fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.sp)
+                        Text("• Round $nextMatchday", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 10.sp)
+                    }
                     Text(
-                        "NEXT MATCH — ROUND $nextMatchday",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (isToday) FmContinueGreen else FmAccentBlue,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 10.sp,
-                        letterSpacing = 1.sp,
-                    )
-                    Text(
-                        if (isHome) "HOME" else "AWAY",
-                        style = MaterialTheme.typography.labelSmall,
+                        if (isHome) "HOME • ${nextFixture.date}" else "AWAY • ${nextFixture.date}",
+                        style = MaterialTheme.typography.bodySmall,
                         color = FmTextSecondary,
-                        fontSize = 10.sp,
+                        fontSize = 10.5.sp,
                     )
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = if (isHome) "${club.name}  vs  ${opponent.name}" else "${opponent.name}  vs  ${club.name}",
                             style = MaterialTheme.typography.titleMedium,
@@ -211,10 +233,11 @@ fun HomeScreen(
                             color = Color.White,
                             fontSize = 15.sp,
                         )
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Fixture Date: ${nextFixture.date}",
+                            text = "Squad status: $availableCount available ($injuredCount injured, $suspendedCount suspended)",
                             style = MaterialTheme.typography.bodySmall,
-                            color = FmTextSecondary,
+                            color = if (injuredCount > 0 || suspendedCount > 0) FmRatingMed else FmTextSecondary,
                             fontSize = 11.sp,
                         )
                     }
@@ -226,113 +249,155 @@ fun HomeScreen(
                     ) {
                         Icon(Icons.Outlined.PlayArrow, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("MATCH", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                        Text("MATCH CENTER", color = Color.Black, fontWeight = FontWeight.Black, fontSize = 11.sp)
                     }
                 }
             }
-        }
-
-        Spacer(modifier = Modifier.height(1.dp))
-
-        // ─── Squad Availability & Condition ───────────────────────────────
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(FmSurface)
-                .border(1.dp, FmBorder)
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-        ) {
-            Text("SQUAD AVAILABILITY & CONDITION", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 10.sp, letterSpacing = 1.sp)
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                KeyStat("Available", "$availableCount", FmContinueGreen)
-                KeyStat("Injured", "$injuredCount", if (injuredCount > 0) FmRatingLow else FmTextMuted)
-                KeyStat("Suspended", "$suspendedCount", if (suspendedCount > 0) FmRatingLow else FmTextMuted)
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-            HorizontalDivider(color = FmBorder, thickness = 1.dp)
-            Spacer(modifier = Modifier.height(10.dp))
-
-            ConditionGauge("Average Fitness", avgFitness, Icons.Outlined.FitnessCenter)
-            Spacer(modifier = Modifier.height(8.dp))
-            ConditionGauge("Average Morale", avgMorale, Icons.Outlined.TrendingUp)
-        }
-
-        Spacer(modifier = Modifier.height(1.dp))
-
-        // ─── Club Finances ────────────────────────────────────────────────
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(FmSurface)
-                .border(1.dp, FmBorder)
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-        ) {
-            Text("FINANCES", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 10.sp, letterSpacing = 1.sp)
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Column {
-                    Text("Club Balance", style = MaterialTheme.typography.bodySmall, color = FmTextMuted, fontSize = 11.sp)
-                    Text("$${"%,d".format(state.humanFinance.balance)}", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
-                }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text("Transfer Budget", style = MaterialTheme.typography.bodySmall, color = FmTextMuted, fontSize = 11.sp)
-                    Text("$${"%,d".format(state.humanFinance.transferBudget)}", style = MaterialTheme.typography.titleMedium, color = FmContinueGreen, fontWeight = FontWeight.Bold)
+        } else if (season.isFinished) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(FmSurfaceSelected)
+                    .border(1.dp, FmRatingHigh)
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text("SEASON CONCLUDED — Final Position: #$myPosition", style = MaterialTheme.typography.titleMedium, color = FmRatingHigh, fontWeight = FontWeight.Bold)
+                Text("Standings and statistics archived. Roll over to commence the new campaign.", style = MaterialTheme.typography.bodySmall, color = FmTextPrimary)
+                Button(onClick = onRolloverSeason, colors = ButtonDefaults.buttonColors(containerColor = FmContinueGreen), shape = RoundedCornerShape(4.dp)) {
+                    Text("START NEXT CAMPAIGN >", color = Color.Black, fontWeight = FontWeight.Bold)
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(1.dp))
 
-        // ─── Quick Actions & Save/Load ─────────────────────────────────────
+        // ─── Football Management Panels: Grid / Dense Rows ────────────────
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            // Panel A: League Position & Record
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(FmSurface)
+                    .border(1.dp, FmBorder, RoundedCornerShape(4.dp))
+                    .padding(10.dp),
+            ) {
+                Text("LEAGUE TABLE", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 9.5.sp, letterSpacing = 0.5.sp)
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("#$myPosition", style = MaterialTheme.typography.headlineLarge, color = Color.White, fontWeight = FontWeight.Black, fontSize = 22.sp)
+                    myEntry?.let {
+                        Text("${it.points} pts", style = MaterialTheme.typography.titleMedium, color = FmContinueGreen, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    }
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                myEntry?.let {
+                    Text("${it.played}P • ${it.won}W ${it.drawn}D ${it.lost}L • GD ${if (it.goalDifference >= 0) "+${it.goalDifference}" else "${it.goalDifference}"}", style = MaterialTheme.typography.bodySmall, color = FmTextSecondary, fontSize = 10.sp)
+                }
+            }
+
+            // Panel B: Squad Availability Breakdown
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(FmSurface)
+                    .border(1.dp, FmBorder, RoundedCornerShape(4.dp))
+                    .padding(10.dp),
+            ) {
+                Text("SQUAD AVAILABILITY", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 9.5.sp, letterSpacing = 0.5.sp)
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    MiniStat("Available", "$availableCount", FmContinueGreen)
+                    MiniStat("Injured", "$injuredCount", if (injuredCount > 0) FmRatingLow else FmTextMuted)
+                    MiniStat("Suspended", "$suspendedCount", if (suspendedCount > 0) FmRatingLow else FmTextMuted)
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Fitness: $avgFitness% • Morale: $avgMorale%", style = MaterialTheme.typography.bodySmall, color = FmTextSecondary, fontSize = 10.sp)
+            }
+        }
+
+        // ─── Club Finances Strip ──────────────────────────────────────────
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(horizontal = 10.dp)
+                .clip(RoundedCornerShape(4.dp))
                 .background(FmSurface)
-                .border(1.dp, FmBorder)
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .border(1.dp, FmBorder, RoundedCornerShape(4.dp))
+                .padding(10.dp),
         ) {
-            Text("QUICK NAVIGATION & SAVE", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 10.sp, letterSpacing = 1.sp)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Icon(Icons.Outlined.AccountBalance, contentDescription = null, tint = FmAccentCyan, modifier = Modifier.size(16.dp))
+                    Text("FINANCES", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 9.5.sp, letterSpacing = 0.5.sp)
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Text("Balance: $${"%,d".format(state.humanFinance.balance)}", fontSize = 11.5.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("Transfer Budget: $${"%,d".format(state.humanFinance.transferBudget)}", fontSize = 11.5.sp, color = FmContinueGreen, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // ─── Quick Actions & Save/Load Workspace ──────────────────────────
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(FmSurface)
+                .border(1.dp, FmBorder, RoundedCornerShape(4.dp))
+                .padding(10.dp),
+        ) {
+            Text("QUICK WORKSPACE ACTIONS", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 9.5.sp, letterSpacing = 0.5.sp)
             Spacer(modifier = Modifier.height(8.dp))
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                OutlinedButton(onClick = { onNavigateToSection(FmNavSection.SQUAD) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(4.dp)) {
-                    Text("Squad", fontSize = 11.sp, color = FmTextPrimary)
+                OutlinedButton(onClick = { onNavigateToSection(FmNavSection.SQUAD) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(3.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp)) {
+                    Text("Squad", fontSize = 11.sp, color = FmTextPrimary, fontWeight = FontWeight.SemiBold)
                 }
-                OutlinedButton(onClick = { onNavigateToSection(FmNavSection.TACTICS) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(4.dp)) {
-                    Text("Tactics", fontSize = 11.sp, color = FmTextPrimary)
+                OutlinedButton(onClick = { onNavigateToSection(FmNavSection.TACTICS) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(3.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp)) {
+                    Text("Tactics", fontSize = 11.sp, color = FmTextPrimary, fontWeight = FontWeight.SemiBold)
                 }
-                OutlinedButton(onClick = { onNavigateToSection(FmNavSection.LEAGUE) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(4.dp)) {
-                    Text("League", fontSize = 11.sp, color = FmTextPrimary)
+                OutlinedButton(onClick = { onNavigateToSection(FmNavSection.LEAGUE) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(3.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp)) {
+                    Text("League", fontSize = 11.sp, color = FmTextPrimary, fontWeight = FontWeight.SemiBold)
                 }
-                OutlinedButton(onClick = { onNavigateToSection(FmNavSection.TRANSFERS) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(4.dp)) {
-                    Text("Transfers", fontSize = 11.sp, color = FmTextPrimary)
+                OutlinedButton(onClick = { onNavigateToSection(FmNavSection.TRANSFERS) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(3.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp)) {
+                    Text("Transfers", fontSize = 11.sp, color = FmTextPrimary, fontWeight = FontWeight.SemiBold)
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Button(
                     onClick = onSaveCareer,
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(containerColor = FmAccentBlue),
-                    shape = RoundedCornerShape(4.dp),
+                    shape = RoundedCornerShape(3.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 6.dp),
                 ) {
-                    Icon(Icons.Outlined.Save, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Save Career", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Icon(Icons.Outlined.Save, contentDescription = null, modifier = Modifier.size(15.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Save Career", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
                 OutlinedButton(
                     onClick = onLoadCareer,
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(4.dp),
+                    shape = RoundedCornerShape(3.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 6.dp),
                 ) {
-                    Icon(Icons.Outlined.Upload, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Load Career", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FmTextPrimary)
+                    Icon(Icons.Outlined.Upload, contentDescription = null, modifier = Modifier.size(15.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Load Career", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FmTextPrimary)
                 }
             }
         }
@@ -342,32 +407,9 @@ fun HomeScreen(
 }
 
 @Composable
-private fun KeyStat(label: String, value: String, color: Color = FmTextSecondary) {
+private fun MiniStat(label: String, value: String, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = MaterialTheme.typography.titleMedium, color = color, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-        Text(label, style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 10.sp)
-    }
-}
-
-@Composable
-private fun ConditionGauge(label: String, value: Int, icon: androidx.compose.ui.graphics.vector.ImageVector) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(icon, contentDescription = null, tint = FmAccentBlue, modifier = Modifier.size(14.dp))
-                Text(label, style = MaterialTheme.typography.bodySmall, color = FmTextPrimary, fontSize = 11.sp)
-            }
-            Text(
-                "$value%",
-                style = MaterialTheme.typography.labelSmall,
-                color = if (value >= 75) FmRatingHigh else if (value >= 50) FmRatingMed else FmRatingLow,
-                fontWeight = FontWeight.Bold,
-                fontSize = 11.sp,
-            )
-        }
+        Text(value, style = MaterialTheme.typography.titleMedium, color = color, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 9.sp)
     }
 }

@@ -220,16 +220,15 @@ fun MatchdayScreen(
                     val stats = result.stats
                     HorizontalDivider(color = FmBorder, thickness = 1.dp)
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp),
                         horizontalArrangement = Arrangement.SpaceAround,
                     ) {
                         MatchStatChip("${stats.home.shots}", "Shots", "${stats.away.shots}")
-                        MatchStatChip("${stats.home.shotsOnTarget}", "On Target", "${stats.away.shotsOnTarget}")
-                        MatchStatChip(
-                            "${(stats.homePossession * 100).toInt()}%",
-                            "Possession",
-                            "${(stats.awayPossession * 100).toInt()}%",
-                        )
+                        MatchStatChip("${stats.home.shotsOnTarget}", "Target", "${stats.away.shotsOnTarget}")
+                        MatchStatChip("${(stats.homePossession * 100).toInt()}%", "Poss", "${(stats.awayPossession * 100).toInt()}%")
+                        MatchStatChip("${stats.home.corners}", "Corners", "${stats.away.corners}")
+                        MatchStatChip("${stats.home.fouls}", "Fouls", "${stats.away.fouls}")
+                        MatchStatChip("${stats.home.yellowCards}", "Cards", "${stats.away.yellowCards}")
                     }
                 }
             }
