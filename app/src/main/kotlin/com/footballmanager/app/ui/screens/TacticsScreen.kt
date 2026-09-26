@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoFixHigh
 import androidx.compose.material.icons.outlined.SwapHoriz
+import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -219,20 +220,43 @@ fun TacticsScreen(
                         }
                     }
 
-                    // Team Power Readout
+                    // Team Rating Readout (Differentiated from player attributes)
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(FmSurfaceAlt)
-                            .border(1.dp, FmBorder, RoundedCornerShape(3.dp))
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(Color(0xFF0F141C))
+                            .border(1.dp, FmAccentBlue.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
                             .padding(6.dp),
                     ) {
-                        Text("TEAM RATINGS", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 8.5.sp)
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Attack: ${state.humanTeam.effectiveAttack()}", fontSize = 10.sp, color = FmRatingHigh, fontWeight = FontWeight.Bold)
-                            Text("Defense: ${state.humanTeam.effectiveDefense()}", fontSize = 10.sp, color = FmAccentCyan, fontWeight = FontWeight.Bold)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Icon(Icons.Outlined.Shield, contentDescription = null, tint = FmAccentCyan, modifier = Modifier.size(11.dp))
+                            Text("TEAM RATING (AGGREGATE)", style = MaterialTheme.typography.labelSmall, color = FmAccentCyan, fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(2.dp))
+                                    .background(FmAccentBlue.copy(alpha = 0.15f))
+                                    .border(1.dp, FmAccentBlue.copy(alpha = 0.4f), RoundedCornerShape(2.dp))
+                                    .padding(vertical = 3.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text("⚔️ ATK ${state.humanTeam.effectiveAttack()}", fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Black)
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(2.dp))
+                                    .background(FmAccentBlue.copy(alpha = 0.15f))
+                                    .border(1.dp, FmAccentBlue.copy(alpha = 0.4f), RoundedCornerShape(2.dp))
+                                    .padding(vertical = 3.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text("🛡️ DEF ${state.humanTeam.effectiveDefense()}", fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Black)
+                            }
                         }
                     }
                 }
@@ -391,12 +415,19 @@ private fun BenchTray(
                         .background(if (hasStarterSelected) FmSurfaceSelected else FmSurfaceAlt)
                         .border(1.dp, if (hasStarterSelected) FmAccentCyan else FmBorder, RoundedCornerShape(3.dp))
                         .clickable { onBenchClick(sub.id) }
-                        .padding(horizontal = 5.dp, vertical = 3.dp),
+                        .padding(horizontal = 6.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(sub.bestPosition().name, fontSize = 8.5.sp, color = FmAccentCyan, fontWeight = FontWeight.Bold)
-                    Text(sub.name.take(10), fontSize = 9.5.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        text = sub.name,
+                        fontSize = 9.5.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
                     Text("$rating", fontSize = 8.5.sp, color = if (rating >= 75) FmRatingHigh else FmRatingMed, fontWeight = FontWeight.Bold)
                 }
             }

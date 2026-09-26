@@ -268,43 +268,58 @@ fun TransfersScreen(
                 }
 
                 1 -> {
-                    // Squad Sell Subtab
-                    LazyColumn(
-                        modifier = Modifier.weight(1f).fillMaxWidth(),
-                        contentPadding = PaddingValues(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        items(humanSquad, key = { it.id }) { player ->
-                            val fee = (TransferValuationCalculator.calculateMarketValue(player) * 0.9).toLong().coerceAtLeast(50_000L)
-                            val buyer = otherClubs.firstOrNull { it.finance.balance >= fee }
+                    // Squad Sell Subtab with structured column header
+                    Column(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF11151C))
+                                .border(width = 1.dp, color = FmBorder)
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text("SQUAD PLAYER & VALUATION", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 9.sp)
+                            Text("BUYER STATUS / ACTION", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 9.sp)
+                        }
 
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(FmSurface)
-                                    .border(1.dp, FmBorder, RoundedCornerShape(4.dp))
-                                    .padding(10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(player.name, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text("${player.bestPosition().name} • ${player.age} yrs • OVR ${player.bestOverall()} • Form ${player.form}", fontSize = 10.5.sp, color = FmTextSecondary)
-                                    Text("Valuation: $${"%,d".format(fee)}", fontSize = 11.sp, color = FmContinueGreen, fontWeight = FontWeight.Bold)
-                                }
+                        LazyColumn(
+                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                            contentPadding = PaddingValues(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            items(humanSquad, key = { it.id }) { player ->
+                                val fee = (TransferValuationCalculator.calculateMarketValue(player) * 0.9).toLong().coerceAtLeast(50_000L)
+                                val buyer = otherClubs.firstOrNull { it.finance.balance >= fee }
 
-                                if (buyer != null) {
-                                    Button(
-                                        onClick = { onDirectTransfer(player.id, humanClubId, buyer.id, fee) },
-                                        colors = ButtonDefaults.buttonColors(containerColor = FmAccentBlue),
-                                        shape = RoundedCornerShape(3.dp),
-                                    ) {
-                                        Text("SELL TO ${buyer.shortName}", fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(FmSurface)
+                                        .border(1.dp, FmBorder, RoundedCornerShape(4.dp))
+                                        .padding(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(player.name, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text("${player.bestPosition().name} • ${player.age} yrs • OVR ${player.bestOverall()} • Form ${player.form}", fontSize = 10.5.sp, color = FmTextSecondary)
+                                        Text("Valuation: $${"%,d".format(fee)}", fontSize = 11.sp, color = FmContinueGreen, fontWeight = FontWeight.Bold)
                                     }
-                                } else {
-                                    Text("No Buyers", color = FmTextMuted, fontSize = 11.sp)
+
+                                    if (buyer != null) {
+                                        Button(
+                                            onClick = { onDirectTransfer(player.id, humanClubId, buyer.id, fee) },
+                                            colors = ButtonDefaults.buttonColors(containerColor = FmAccentBlue),
+                                            shape = RoundedCornerShape(3.dp),
+                                        ) {
+                                            Text("SELL TO ${buyer.shortName}", fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                    } else {
+                                        Text("No Buyers", color = FmTextMuted, fontSize = 11.sp)
+                                    }
                                 }
                             }
                         }
@@ -522,13 +537,13 @@ private fun SelectedPlayerInspector(
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     pair.forEach { attr ->
                         Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(attr.name.take(4), fontSize = 10.sp, color = FmTextSecondary)
+                            val attrLabel = attr.name.lowercase().replaceFirstChar { it.uppercase() }
+                            Text(attrLabel, fontSize = 10.sp, color = FmTextSecondary)
                             Text("${player.attributes[attr]}", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 6.dp))
                         }
                     }
                 }
             }
-
             Spacer(modifier = Modifier.height(8.dp))
             HorizontalDivider(color = FmBorder, thickness = 1.dp)
             Spacer(modifier = Modifier.height(8.dp))
@@ -540,13 +555,27 @@ private fun SelectedPlayerInspector(
                 Text("Transfer Fee", fontSize = 10.5.sp, color = FmTextSecondary)
                 Text("$${"%,d".format(fee)}", fontSize = 11.sp, color = FmContinueGreen, fontWeight = FontWeight.Bold)
             }
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text("Balance After", fontSize = 10.5.sp, color = FmTextSecondary)
                 val remaining = currentBalance - fee
-                Text("$${"%,d".format(remaining)}", fontSize = 11.sp, color = if (remaining >= 0) Color.White else FmRatingLow, fontWeight = FontWeight.Bold)
+                if (remaining >= 0) {
+                    Text("$${"%,d".format(remaining)}", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(FmRatingLow.copy(alpha = 0.2f))
+                            .border(1.dp, FmRatingLow, RoundedCornerShape(3.dp))
+                            .padding(horizontal = 5.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                    ) {
+                        Text("⚠️", fontSize = 8.sp)
+                        Text("-$${"%,d".format(-remaining)} (Deficit)", fontSize = 10.sp, color = FmRatingLow, fontWeight = FontWeight.Black)
+                    }
+                }
             }
         }
-
         Button(
             onClick = onBuy,
             enabled = canAfford,
