@@ -84,7 +84,7 @@
         { "name": "Rodrigo De Paul", "position": "CM", "age": 32, "nationality": "ARG", "attributes": { "PASSING": 86, "PHYSICAL": 84, "DEFENDING": 79 } },
         { "name": "Koke", "position": "CM", "age": 34, "nationality": "ESP", "attributes": { "PASSING": 85, "DEFENDING": 78, "PHYSICAL": 76 } },
         { "name": "Pablo Barrios", "position": "CM", "age": 23, "nationality": "ESP", "potential": 88, "attributes": { "PASSING": 83, "DRIBBLING": 83, "DEFENDING": 79 } },
-        { "name": "Samuel Lino", "position": "LM", "age": 26, "nationality": "BRA", "attributes": { "PACE": 87, "DRIBBLING": 85, "DEFENDING": 76 } },
+        { "name": "Samuel Lino", "position": "LW", "age": 26, "nationality": "BRA", "attributes": { "PACE": 87, "DRIBBLING": 85, "DEFENDING": 76 } },
         { "name": "Julián Álvarez", "position": "ST", "age": 26, "nationality": "ARG", "potential": 92, "attributes": { "SHOOTING": 89, "PACE": 87, "DRIBBLING": 87, "PASSING": 84 } },
         { "name": "Antoine Griezmann", "position": "AM", "age": 35, "nationality": "FRA", "attributes": { "PASSING": 89, "SHOOTING": 87, "DRIBBLING": 87 } },
         { "name": "Alexander Sørloth", "position": "ST", "age": 30, "nationality": "NOR", "attributes": { "SHOOTING": 86, "PHYSICAL": 90, "PACE": 81 } },

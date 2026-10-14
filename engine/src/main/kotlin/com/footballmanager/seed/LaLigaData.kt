@@ -143,7 +143,7 @@ object LaLigaData {
                     PlayerData("Rodrigo De Paul", Position.CM, 32, "ARG", 84, 84, 170_000L),
                     PlayerData("Koke", Position.CM, 34, "ESP", 82, 82, 160_000L),
                     PlayerData("Pablo Barrios", Position.CM, 23, "ESP", 81, 88, 70_000L),
-                    PlayerData("Samuel Lino", Position.LM, 26, "BRA", 82, 85, 95_000L),
+                    PlayerData("Samuel Lino", Position.LW, 26, "BRA", 82, 85, 95_000L),
                     PlayerData("Julián Álvarez", Position.ST, 26, "ARG", 88, 92, 240_000L),
                     PlayerData("Antoine Griezmann", Position.AM, 35, "FRA", 87, 87, 260_000L),
                     PlayerData("Alexander Sørloth", Position.ST, 30, "NOR", 84, 84, 150_000L),
