@@ -68,15 +68,11 @@ import com.footballmanager.model.Attribute
 import com.footballmanager.model.Club
 import com.footballmanager.model.Player
 import com.footballmanager.model.PositionGroup
-import com.footballmanager.model.SquadStatus
 
 @Composable
 fun TransfersScreen(
     state: GameUiState,
     onDirectTransfer: (playerId: Long, fromClubId: Long, toClubId: Long, fee: Long) -> Unit = { _, _, _, _ -> },
-    onOfferContract: (bidId: Long, weeklyWage: Long, years: Int, squadStatus: SquadStatus) -> Unit = { _, _, _, _ -> },
-    onCompleteDeal: (bidId: Long) -> Unit = {},
-    onCancelDeal: (bidId: Long) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var selectedSubTab by remember { mutableIntStateOf(0) }
@@ -485,8 +481,13 @@ private fun SelectedPlayerInspector(
             Spacer(modifier = Modifier.height(6.dp))
 
             Text(player.name, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Text("${player.nationality} • ${player.age} yrs • ${player.bestPosition().name} (OVR ${player.bestOverall()})", fontSize = 10.5.sp, color = FmTextSecondary)
-            Text("Club: ${owningClub.name}", fontSize = 10.5.sp, color = FmAccentCyan)
+            Text("${player.nationality} • ${player.age} yrs • ${player.bestPosition().name} (OVR ${player.bestOverall()})", fontSize = 11.sp, color = FmTextSecondary)
+            Text("Club: ${owningClub.name}", fontSize = 11.sp, color = FmAccentCyan)
+            Text(
+                "Wage $${"%,d".format(player.contract.weeklyWage)}/w • Contract until ${player.contract.expiresOn}",
+                fontSize = 11.sp,
+                color = FmTextSecondary,
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
             HorizontalDivider(color = FmBorder, thickness = 1.dp)
@@ -521,11 +522,11 @@ private fun SelectedPlayerInspector(
             Text("FINANCIAL IMPACT", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 9.sp)
             Spacer(modifier = Modifier.height(4.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Transfer Fee", fontSize = 10.5.sp, color = FmTextSecondary)
+                Text("Transfer Fee", fontSize = 11.sp, color = FmTextSecondary)
                 Text("$${"%,d".format(fee)}", fontSize = 11.sp, color = FmContinueGreen, fontWeight = FontWeight.Bold)
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Balance After", fontSize = 10.5.sp, color = FmTextSecondary)
+                Text("Balance After", fontSize = 11.sp, color = FmTextSecondary)
                 val remaining = currentBalance - fee
                 if (remaining >= 0) {
                     Text("$${"%,d".format(remaining)}", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)

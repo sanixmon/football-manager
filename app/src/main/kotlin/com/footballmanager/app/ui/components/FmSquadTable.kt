@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import com.footballmanager.app.ui.theme.FmAccentBlue
 import com.footballmanager.app.ui.theme.FmAccentCyan
 import com.footballmanager.app.ui.theme.FmBorder
+import com.footballmanager.app.ui.theme.FmContinueGreen
 import com.footballmanager.app.ui.theme.FmDarkBg
 import com.footballmanager.app.ui.theme.FmPosAtt
 import com.footballmanager.app.ui.theme.FmPosDef
@@ -85,6 +86,7 @@ fun FmSquadTable(
     selectedPlayerId: Long?,
     onPlayerClick: (Player) -> Unit,
     modifier: Modifier = Modifier,
+    starterIds: Set<Long> = emptySet(),
 ) {
     var sortColumn by remember { mutableStateOf(SquadSortColumn.RATING) }
     var sortAscending by remember { mutableStateOf(false) }
@@ -287,6 +289,17 @@ fun FmSquadTable(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    if (player.id in starterIds) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(FmContinueGreen.copy(alpha = 0.25f))
+                                .padding(horizontal = 4.dp, vertical = 1.dp),
+                        ) {
+                            Text("XI", color = FmContinueGreen, fontSize = 9.sp, fontWeight = FontWeight.Black)
+                        }
+                    }
                     if (player.isInjured) {
                         Spacer(modifier = Modifier.width(4.dp))
                         Box(

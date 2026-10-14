@@ -2,12 +2,12 @@ package com.footballmanager.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,7 +20,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBalance
-import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Shield
@@ -37,10 +36,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.footballmanager.app.ui.components.FmNavSection
-import com.footballmanager.app.ui.viewmodel.GameUiState
+import com.footballmanager.app.ui.components.FmNoticeBanner
+import com.footballmanager.app.ui.components.FmSectionHeader
+import com.footballmanager.app.ui.components.FmStatus
+import com.footballmanager.app.ui.components.FmStatusBadge
 import com.footballmanager.app.ui.theme.FmAccentBlue
 import com.footballmanager.app.ui.theme.FmAccentCyan
 import com.footballmanager.app.ui.theme.FmBorder
@@ -57,9 +60,11 @@ import com.footballmanager.app.ui.theme.FmSurface
 import com.footballmanager.app.ui.theme.FmTextMuted
 import com.footballmanager.app.ui.theme.FmTextPrimary
 import com.footballmanager.app.ui.theme.FmTextSecondary
+import com.footballmanager.app.ui.viewmodel.GameUiState
+import com.footballmanager.simulation.MatchEventType
 
-// Landscape-only dashboard: club strip on top, then 2-column workspace
-// (left: next fixture + league/squad | right: finances + quick actions).
+// Club command center: answers who/where, what happened, what's next,
+// what needs attention. Panels navigate to the relevant section.
 @Composable
 fun HomeScreen(
     state: GameUiState,
@@ -68,6 +73,7 @@ fun HomeScreen(
     onSaveCareer: () -> Unit = {},
     onLoadCareer: () -> Unit = {},
     onRolloverSeason: () -> Unit = {},
+    onDismissSaveStatus: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val club = state.humanClub
@@ -75,13 +81,14 @@ fun HomeScreen(
     val squad = state.humanSquad
     val nextMatchday = season.nextMatchday
     val nextFixture = season.fixtures.getOrNull(season.nextFixtureIndex)
+    val lastResult = state.lastMatchResult
 
     val avgFitness = if (squad.isNotEmpty()) squad.map { it.fitness }.average().toInt() else 100
     val avgMorale = if (squad.isNotEmpty()) squad.map { it.morale }.average().toInt() else 50
 
-    val availableCount = squad.count { it.isAvailable }
-    val injuredCount = squad.count { it.isInjured }
-    val suspendedCount = squad.count { it.isSuspended }
+    val injured = squad.filter { it.isInjured }
+    val suspended = squad.filter { it.isSuspended }
+    val lowFitness = squad.filter { !it.isInjured && it.fitness < 60 }
 
     val standings = season.standings.entries
     val myEntry = standings.firstOrNull { it.team.clubId == state.humanClubId }
@@ -97,21 +104,14 @@ fun HomeScreen(
             .verticalScroll(rememberScrollState()),
     ) {
         state.saveStatusMessage?.let { msg ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(com.footballmanager.app.ui.theme.FmSurfaceSelected)
-                    .border(1.dp, FmAccentBlue)
-                    .padding(horizontal = 14.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = FmAccentCyan, modifier = Modifier.size(16.dp))
-                Text(msg, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-            }
+            FmNoticeBanner(
+                message = msg,
+                accent = FmAccentBlue,
+                onDismiss = onDismissSaveStatus,
+            )
         }
 
-        // Club overview strip (compact for landscape).
+        // Club identity strip.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -135,7 +135,7 @@ fun HomeScreen(
                 Column {
                     Text(club.name, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                     Text(
-                        text = "${season.managerProfile?.name ?: "Head Coach"} • Season 2026/27 • ${season.currentDate}",
+                        text = "${season.managerProfile?.name ?: "Head Coach"} • ${season.currentDate}",
                         style = MaterialTheme.typography.bodySmall,
                         color = FmTextSecondary,
                         fontSize = 11.sp,
@@ -146,7 +146,7 @@ fun HomeScreen(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("FORM", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 11.sp)
                 if (recent5.isEmpty()) {
-                    Text("- - -", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 11.sp)
+                    Text("No matches yet", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 11.sp)
                 } else {
                     recent5.forEach { r ->
                         val isHome = r.homeClubId == state.humanClubId
@@ -171,18 +171,19 @@ fun HomeScreen(
             }
         }
 
-        // Two-column workspace for short landscape height.
+        // Two-column command workspace.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // Left column: next fixture + league/squad panels.
+            // Left: action column — next match, last result, attention.
             Column(
                 modifier = Modifier.weight(1.25f),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                // ── Next match ──
                 if (nextFixture != null && !season.isFinished) {
                     val opponentId = if (nextFixture.home.clubId == club.id) nextFixture.away.clubId else nextFixture.home.clubId
                     val isHome = nextFixture.home.clubId == club.id
@@ -192,123 +193,151 @@ fun HomeScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clip(RoundedCornerShape(4.dp))
                             .background(if (isToday) com.footballmanager.app.ui.theme.FmSurfaceSelected else FmSurface)
-                            .border(1.dp, if (isToday) FmContinueGreen else FmBorder)
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                            .border(1.dp, if (isToday) FmContinueGreen else FmBorder, RoundedCornerShape(4.dp))
+                            .clickable(onClick = onNavigateToMatchday)
+                            .padding(12.dp),
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
+                        FmSectionHeader(
+                            title = if (isToday) "MATCHDAY — ROUND $nextMatchday" else "NEXT MATCH — ROUND $nextMatchday",
+                            actionLabel = "Match centre",
+                            onActionClick = onNavigateToMatchday,
+                        )
+                        Text(
+                            text = if (isHome) "${club.name} vs ${opponent.name}" else "${opponent.name} vs ${club.name}",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            fontSize = 15.sp,
+                        )
+                        Text(
+                            text = "${if (isHome) "Home" else "Away"} • ${nextFixture.date}" +
+                                (if (!isToday) " • in ${state.daysUntilNextMatch}d" else " • today"),
+                            fontSize = 11.sp,
+                            color = FmTextSecondary,
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = onNavigateToMatchday,
+                            colors = ButtonDefaults.buttonColors(containerColor = FmContinueGreen),
+                            shape = RoundedCornerShape(4.dp),
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text("NEXT FIXTURE", style = MaterialTheme.typography.labelSmall, color = FmAccentCyan, fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 1.sp)
-                                Text("• Round $nextMatchday", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 11.sp)
-                            }
-                            Text(
-                                if (isHome) "HOME • ${nextFixture.date}" else "AWAY • ${nextFixture.date}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = FmTextSecondary,
-                                fontSize = 11.sp,
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = if (isHome) "${club.name} vs ${opponent.name}" else "${opponent.name} vs ${club.name}",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    fontSize = 14.sp,
-                                )
-                                Text(
-                                    text = "$availableCount available ($injuredCount injured, $suspendedCount suspended)",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = if (injuredCount > 0 || suspendedCount > 0) FmRatingMed else FmTextSecondary,
-                                    fontSize = 11.sp,
-                                )
-                            }
-
-                            Button(
-                                onClick = onNavigateToMatchday,
-                                colors = ButtonDefaults.buttonColors(containerColor = FmContinueGreen),
-                                shape = RoundedCornerShape(4.dp),
-                            ) {
-                                Icon(Icons.Outlined.PlayArrow, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("MATCH CENTER", color = Color.Black, fontWeight = FontWeight.Black, fontSize = 12.sp)
-                            }
+                            Icon(Icons.Outlined.PlayArrow, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(if (isToday) "PLAY MATCH" else "OPEN MATCH CENTRE", color = Color.Black, fontWeight = FontWeight.Black, fontSize = 12.sp)
                         }
                     }
                 } else if (season.isFinished) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clip(RoundedCornerShape(4.dp))
                             .background(com.footballmanager.app.ui.theme.FmSurfaceSelected)
-                            .border(1.dp, FmRatingHigh)
+                            .border(1.dp, FmRatingHigh, RoundedCornerShape(4.dp))
                             .padding(12.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Text("SEASON CONCLUDED — #$myPosition", style = MaterialTheme.typography.titleMedium, color = FmRatingHigh, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        FmSectionHeader(title = "SEASON COMPLETE")
+                        Text("Final position: #$myPosition", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         Button(onClick = onRolloverSeason, colors = ButtonDefaults.buttonColors(containerColor = FmContinueGreen), shape = RoundedCornerShape(4.dp)) {
-                            Text("START NEXT CAMPAIGN >", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            Text("START NEXT SEASON", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                     }
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                // ── Last result ──
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(FmSurface)
+                        .border(1.dp, FmBorder, RoundedCornerShape(4.dp))
+                        .padding(12.dp),
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(FmSurface)
-                            .border(1.dp, FmBorder, RoundedCornerShape(4.dp))
-                            .padding(10.dp),
-                    ) {
-                        Text("LEAGUE TABLE", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 11.sp, letterSpacing = 0.5.sp)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("#$myPosition", style = MaterialTheme.typography.headlineLarge, color = Color.White, fontWeight = FontWeight.Black, fontSize = 22.sp)
-                            myEntry?.let {
-                                Text("${it.points} pts", style = MaterialTheme.typography.titleMedium, color = FmContinueGreen, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    FmSectionHeader(title = "LAST RESULT")
+                    if (lastResult != null) {
+                        val isHome = lastResult.homeClubId == state.humanClubId
+                        val userWon = (isHome && lastResult.isHomeWin) || (!isHome && lastResult.isAwayWin)
+                        val homeName = state.game.club(lastResult.homeClubId).name
+                        val awayName = state.game.club(lastResult.awayClubId).name
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("$homeName ${lastResult.homeScore} – ${lastResult.awayScore} $awayName", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                val scorers = lastResult.events.filter { it.type == MatchEventType.GOAL }.take(3)
+                                if (scorers.isEmpty()) {
+                                    Text("No goals", fontSize = 11.sp, color = FmTextMuted)
+                                } else {
+                                    scorers.forEach { e ->
+                                        Text("${e.minute}' ${e.description}", fontSize = 11.sp, color = FmTextSecondary, maxLines = 1)
+                                    }
+                                }
+                            }
+                            FmStatusBadge(
+                                text = if (userWon) "WIN" else if (lastResult.isDraw) "DRAW" else "LOSS",
+                                status = if (userWon) FmStatus.POSITIVE else if (lastResult.isDraw) FmStatus.WARNING else FmStatus.NEGATIVE,
+                            )
+                        }
+                    } else {
+                        Text("No matches played yet this season.", fontSize = 12.sp, color = FmTextMuted)
+                    }
+                }
+
+                // ── Requires attention ──
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(FmSurface)
+                        .border(1.dp, FmBorder, RoundedCornerShape(4.dp))
+                        .padding(12.dp),
+                ) {
+                    val issueCount = injured.size + suspended.size + lowFitness.size
+                    FmSectionHeader(
+                        title = if (issueCount == 0) "SQUAD STATUS" else "REQUIRES ATTENTION ($issueCount)",
+                        actionLabel = "Squad",
+                        onActionClick = { onNavigateToSection(FmNavSection.SQUAD) },
+                    )
+                    if (issueCount == 0) {
+                        FmStatusBadge(text = "Squad fully available", status = FmStatus.POSITIVE)
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            injured.take(3).forEach { p ->
+                                AttentionRow(
+                                    name = p.name,
+                                    detail = "Injured" + (p.injuryStatus?.let { " (${it.daysRemaining}d)" } ?: ""),
+                                    status = FmStatus.NEGATIVE,
+                                    onClick = { onNavigateToSection(FmNavSection.SQUAD) },
+                                )
+                            }
+                            suspended.take(2).forEach { p ->
+                                AttentionRow(
+                                    name = p.name,
+                                    detail = "Suspended" + (p.suspensionStatus?.let { " (${it.matchesRemaining}m)" } ?: ""),
+                                    status = FmStatus.WARNING,
+                                    onClick = { onNavigateToSection(FmNavSection.SQUAD) },
+                                )
+                            }
+                            lowFitness.take(2).forEach { p ->
+                                AttentionRow(
+                                    name = p.name,
+                                    detail = "Fitness ${p.fitness}%",
+                                    status = FmStatus.WARNING,
+                                    onClick = { onNavigateToSection(FmNavSection.SQUAD) },
+                                )
+                            }
+                            if (issueCount > 7) {
+                                Text("+${issueCount - 7} more in squad", fontSize = 11.sp, color = FmTextMuted)
                             }
                         }
-                        myEntry?.let {
-                            Text("${it.played}P • ${it.won}W ${it.drawn}D ${it.lost}L • GD ${if (it.goalDifference >= 0) "+${it.goalDifference}" else "${it.goalDifference}"}", style = MaterialTheme.typography.bodySmall, color = FmTextSecondary, fontSize = 11.sp)
-                        }
-                    }
-
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(FmSurface)
-                            .border(1.dp, FmBorder, RoundedCornerShape(4.dp))
-                            .padding(10.dp),
-                    ) {
-                        Text("SQUAD", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 11.sp, letterSpacing = 0.5.sp)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            MiniStat("Available", "$availableCount", FmContinueGreen)
-                            MiniStat("Injured", "$injuredCount", if (injuredCount > 0) FmRatingLow else FmTextMuted)
-                            MiniStat("Suspended", "$suspendedCount", if (suspendedCount > 0) FmRatingLow else FmTextMuted)
-                        }
-                        Text("Fitness: $avgFitness% • Morale: $avgMorale%", style = MaterialTheme.typography.bodySmall, color = FmTextSecondary, fontSize = 11.sp)
                     }
                 }
             }
 
-            // Right column: finances + quick actions.
+            // Right: context column — league snapshot, squad summary, save/load.
             Column(
                 modifier = Modifier.weight(0.75f),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -319,15 +348,47 @@ fun HomeScreen(
                         .clip(RoundedCornerShape(4.dp))
                         .background(FmSurface)
                         .border(1.dp, FmBorder, RoundedCornerShape(4.dp))
-                        .padding(10.dp),
+                        .padding(12.dp),
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Icon(Icons.Outlined.AccountBalance, contentDescription = null, tint = FmAccentCyan, modifier = Modifier.size(16.dp))
-                        Text("FINANCES", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 11.sp, letterSpacing = 0.5.sp)
+                    FmSectionHeader(
+                        title = "LEAGUE",
+                        actionLabel = "Full table",
+                        onActionClick = { onNavigateToSection(FmNavSection.LEAGUE) },
+                    )
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
+                        Text("#$myPosition", color = Color.White, fontWeight = FontWeight.Black, fontSize = 22.sp)
+                        myEntry?.let {
+                            Text("${it.points} pts • GD ${if (it.goalDifference >= 0) "+${it.goalDifference}" else "${it.goalDifference}"}", color = FmContinueGreen, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        }
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text("Balance: $${"%,d".format(state.humanFinance.balance)}", fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.Bold)
-                    Text("Budget: $${"%,d".format(state.humanFinance.transferBudget)}", fontSize = 12.sp, color = FmContinueGreen, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    val top5 = standings.take(5)
+                    top5.forEachIndexed { index, entry ->
+                        val isHuman = entry.team.clubId == state.humanClubId
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(if (isHuman) com.footballmanager.app.ui.theme.FmSurfaceSelected else Color.Transparent)
+                                .padding(vertical = 2.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(
+                                "${index + 1}. ${state.game.club(entry.team.clubId).shortName}",
+                                fontSize = 11.sp,
+                                color = if (isHuman) Color.White else FmTextPrimary,
+                                fontWeight = if (isHuman) FontWeight.Bold else FontWeight.Normal,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Text("${entry.points}", fontSize = 11.sp, color = FmTextSecondary, textAlign = TextAlign.End)
+                        }
+                    }
+                    if (myPosition > 5 && myEntry != null) {
+                        Text("…", fontSize = 11.sp, color = FmTextMuted)
+                        Row(modifier = Modifier.fillMaxWidth().background(com.footballmanager.app.ui.theme.FmSurfaceSelected).padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("$myPosition. ${club.shortName}", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                            Text("${myEntry.points}", fontSize = 11.sp, color = FmContinueGreen, textAlign = TextAlign.End)
+                        }
+                    }
                 }
 
                 Column(
@@ -336,44 +397,53 @@ fun HomeScreen(
                         .clip(RoundedCornerShape(4.dp))
                         .background(FmSurface)
                         .border(1.dp, FmBorder, RoundedCornerShape(4.dp))
-                        .padding(10.dp),
+                        .clickable { onNavigateToSection(FmNavSection.SQUAD) }
+                        .padding(12.dp),
+                ) {
+                    FmSectionHeader(title = "SQUAD")
+                    Text(
+                        "${squad.count { it.isAvailable }} available • ${injured.size} injured • ${suspended.size} suspended",
+                        fontSize = 11.sp,
+                        color = if (injured.isNotEmpty() || suspended.isNotEmpty()) FmRatingMed else FmTextSecondary,
+                    )
+                    Text("Fitness $avgFitness% • Morale $avgMorale%", fontSize = 11.sp, color = FmTextSecondary)
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(FmSurface)
+                        .border(1.dp, FmBorder, RoundedCornerShape(4.dp))
+                        .padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    Text("QUICK ACTIONS", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 11.sp, letterSpacing = 0.5.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(Icons.Outlined.AccountBalance, contentDescription = null, tint = FmAccentCyan, modifier = Modifier.size(16.dp))
+                        Text("CLUB FINANCES", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 11.sp)
+                    }
+                    Text("Balance $${"%,d".format(state.humanFinance.balance)}", fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("Budget $${"%,d".format(state.humanFinance.transferBudget)}", fontSize = 12.sp, color = FmContinueGreen, fontWeight = FontWeight.Bold)
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        OutlinedButton(onClick = { onNavigateToSection(FmNavSection.SQUAD) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(3.dp)) {
-                            Text("Squad", fontSize = 12.sp, color = FmTextPrimary, fontWeight = FontWeight.SemiBold)
+                        Button(
+                            onClick = onSaveCareer,
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = FmAccentBlue),
+                            shape = RoundedCornerShape(3.dp),
+                        ) {
+                            Icon(Icons.Outlined.Save, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Save", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
-                        OutlinedButton(onClick = { onNavigateToSection(FmNavSection.TACTICS) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(3.dp)) {
-                            Text("Tactics", fontSize = 12.sp, color = FmTextPrimary, fontWeight = FontWeight.SemiBold)
+                        OutlinedButton(
+                            onClick = onLoadCareer,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(3.dp),
+                        ) {
+                            Icon(Icons.Outlined.Upload, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Load", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FmTextPrimary)
                         }
-                    }
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        OutlinedButton(onClick = { onNavigateToSection(FmNavSection.LEAGUE) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(3.dp)) {
-                            Text("League", fontSize = 12.sp, color = FmTextPrimary, fontWeight = FontWeight.SemiBold)
-                        }
-                        OutlinedButton(onClick = { onNavigateToSection(FmNavSection.TRANSFERS) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(3.dp)) {
-                            Text("Transfers", fontSize = 12.sp, color = FmTextPrimary, fontWeight = FontWeight.SemiBold)
-                        }
-                    }
-                    Button(
-                        onClick = onSaveCareer,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = FmAccentBlue),
-                        shape = RoundedCornerShape(3.dp),
-                    ) {
-                        Icon(Icons.Outlined.Save, contentDescription = null, modifier = Modifier.size(15.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Save Career", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                    OutlinedButton(
-                        onClick = onLoadCareer,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(3.dp),
-                    ) {
-                        Icon(Icons.Outlined.Upload, contentDescription = null, modifier = Modifier.size(15.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Load Career", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FmTextPrimary)
                     }
                 }
             }
@@ -384,9 +454,34 @@ fun HomeScreen(
 }
 
 @Composable
-private fun MiniStat(label: String, value: String, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = MaterialTheme.typography.titleMedium, color = color, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-        Text(label, style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 11.sp)
+private fun AttentionRow(
+    name: String,
+    detail: String,
+    status: FmStatus,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(3.dp))
+            .background(FmCardBg)
+            .border(1.dp, FmBorder, RoundedCornerShape(3.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(name, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1)
+            Text(detail, fontSize = 11.sp, color = FmTextSecondary)
+        }
+        FmStatusBadge(
+            text = when (status) {
+                FmStatus.NEGATIVE -> "OUT"
+                FmStatus.WARNING -> "RISK"
+                else -> "OK"
+            },
+            status = status,
+        )
     }
 }

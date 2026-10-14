@@ -119,7 +119,7 @@ fun FmTopAppBar(
                         maxLines = 1,
                     )
                     Text(
-                        text = if (breadcrumb.isNotBlank()) breadcrumb else "Liga Nusantara • $currentDateText",
+                        text = if (breadcrumb.isNotBlank()) breadcrumb else currentDateText,
                         style = MaterialTheme.typography.bodySmall,
                         color = FmTextSecondary,
                         fontSize = 11.sp,

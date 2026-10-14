@@ -87,10 +87,7 @@ class MainActivity : ComponentActivity() {
                             onDirectTransfer = viewModel::executeDirectTransfer,
                             onSaveCareer = { viewModel.showSaveDialog(true) },
                             onLoadCareer = { viewModel.showLoadDialog(true) },
-                            onSubmitBid = viewModel::submitTransferBid,
-                            onOfferContract = viewModel::offerContractTerms,
-                            onCompleteDeal = viewModel::completeTransferDeal,
-                            onCancelDeal = viewModel::cancelTransferDeal,
+                            onDismissSaveStatus = viewModel::clearSaveStatus,
                             onRolloverSeason = viewModel::rolloverToNextSeason,
                             onUpdatePlayerTraining = viewModel::updatePlayerTraining,
                             onUpdateClubTraining = viewModel::updateClubTraining,
@@ -102,7 +99,6 @@ class MainActivity : ComponentActivity() {
                                 viewModel.showSaveDialog(false)
                                 viewModel.showLoadDialog(false)
                             },
-                            onMainMenuClick = { viewModel.goToAppScreen(com.footballmanager.app.ui.viewmodel.AppScreen.MAIN_MENU) },
                         )
                     }
                 }
