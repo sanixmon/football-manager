@@ -1,12 +1,10 @@
 package com.footballmanager.app.ui.screens
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -49,15 +47,14 @@ import com.footballmanager.app.ui.theme.FmRatingHigh
 import com.footballmanager.app.ui.theme.FmRatingLow
 import com.footballmanager.app.ui.theme.FmRatingMed
 import com.footballmanager.app.ui.theme.FmSurface
-import com.footballmanager.app.ui.theme.FmSurfaceAlt
-import com.footballmanager.app.ui.theme.FmSurfaceSelected
 import com.footballmanager.app.ui.theme.FmTextMuted
 import com.footballmanager.app.ui.theme.FmTextPrimary
 import com.footballmanager.app.ui.theme.FmTextSecondary
 import com.footballmanager.app.ui.viewmodel.GameUiState
 import com.footballmanager.simulation.MatchEventType
 
-@OptIn(ExperimentalFoundationApi::class)
+// Landscape-only match center: scoreboard strip + 50/50 timeline | stats+ratings.
+// Shows a pre-match preview when no result exists yet (first matchday).
 @Composable
 fun MatchdayScreen(
     state: GameUiState,
@@ -68,270 +65,123 @@ fun MatchdayScreen(
     val nextMatchday = state.currentSeason.nextMatchday
     val season = state.currentSeason
     val humanClubId = state.humanClubId
+    val nextFixture = season.fixtures.getOrNull(season.nextFixtureIndex)
 
-    BoxWithConstraints(
+    Column(
         modifier = modifier
             .fillMaxSize()
             .background(FmDarkBg),
     ) {
-        val availableWidth = maxWidth
-        val isExpanded = availableWidth >= 600.dp
+        if (result != null) {
+            val homeClub = state.game.club(result.homeClubId)
+            val awayClub = state.game.club(result.awayClubId)
+            val isUserInvolved = result.homeClubId == humanClubId || result.awayClubId == humanClubId
+            val userWon = (result.homeClubId == humanClubId && result.isHomeWin) || (result.awayClubId == humanClubId && result.isAwayWin)
+            val accentColor = if (isUserInvolved) (if (userWon) FmRatingHigh else if (result.isDraw) FmRatingMed else FmRatingLow) else FmAccentBlue
 
-        if (isExpanded && result != null) {
-            // ─── EXPANDED MODE (>= 600dp): Split Screen Match Center ──────────
-            Column(modifier = Modifier.fillMaxSize()) {
-                val homeClub = state.game.club(result.homeClubId)
-                val awayClub = state.game.club(result.awayClubId)
-                val isUserInvolved = result.homeClubId == humanClubId || result.awayClubId == humanClubId
-                val userWon = (result.homeClubId == humanClubId && result.isHomeWin) || (result.awayClubId == humanClubId && result.isAwayWin)
-                val accentColor = if (isUserInvolved) (if (userWon) FmRatingHigh else if (result.isDraw) FmRatingMed else FmRatingLow) else FmAccentBlue
-
-                // 1. Compact Scoreboard Strip (38dp)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(38.dp)
-                        .background(Color(0xFF141820))
-                        .border(1.dp, if (isUserInvolved) accentColor else FmBorder)
-                        .padding(horizontal = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("FULL TIME", style = MaterialTheme.typography.labelSmall, color = accentColor, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
-                        Text("${homeClub.name} vs ${awayClub.name}", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
-                    }
-
-                    Text("${result.homeScore}  –  ${result.awayScore}", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color.White)
-
-                    // Action CTA button
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(FmContinueGreen)
-                            .clickable { onSimulateMatchday() }
-                            .padding(horizontal = 10.dp, vertical = 5.dp),
-                    ) {
-                        Text("CONTINUE >", color = Color.Black, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
-                    }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(42.dp)
+                    .background(Color(0xFF141820))
+                    .border(1.dp, if (isUserInvolved) accentColor else FmBorder)
+                    .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("FULL TIME", style = MaterialTheme.typography.labelSmall, color = accentColor, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text("${homeClub.name} vs ${awayClub.name}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
                 }
 
-                // 2. 50/50 Split Body: Left Timeline | Right Stats + Ratings
-                Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                    // Left Pane (50%): Chronological Incidents Timeline
-                    Column(
-                        modifier = Modifier
-                            .weight(0.50f)
-                            .fillMaxHeight()
-                            .background(FmSurface)
-                            .border(1.dp, FmBorder),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color(0xFF11151C))
-                                .padding(horizontal = 10.dp, vertical = 5.dp),
-                        ) {
-                            Text("MATCH TIMELINE", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 9.sp, letterSpacing = 0.5.sp)
-                        }
-                        HorizontalDivider(color = FmBorder, thickness = 1.dp)
+                Text("${result.homeScore}  –  ${result.awayScore}", fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color.White)
 
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                        ) {
-                            items(result.events.filter { it.type != MatchEventType.POSSESSION }) { event ->
-                                EventTimelineRow(event)
-                                HorizontalDivider(color = FmBorder.copy(alpha = 0.3f), thickness = 0.5.dp)
-                            }
-                        }
-                    }
-
-                    // Right Pane (50%): Stacked Stats & Ratings
-                    Column(
-                        modifier = Modifier
-                            .weight(0.50f)
-                            .fillMaxHeight()
-                            .background(FmSurface)
-                            .border(1.dp, FmBorder),
-                    ) {
-                        // Top Half: Stats
-                        Column(modifier = Modifier.weight(0.42f).fillMaxWidth()) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(Color(0xFF11151C))
-                                    .padding(horizontal = 10.dp, vertical = 5.dp),
-                            ) {
-                                Text("MATCH STATISTICS", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 9.sp, letterSpacing = 0.5.sp)
-                            }
-                            HorizontalDivider(color = FmBorder, thickness = 1.dp)
-
-                            val stats = result.stats
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = 10.dp, vertical = 4.dp),
-                                verticalArrangement = Arrangement.SpaceAround,
-                            ) {
-                                DenseStatRow("${(stats.homePossession * 100).toInt()}%", "Possession", "${(stats.awayPossession * 100).toInt()}%")
-                                DenseStatRow("${stats.home.shots}", "Total Shots", "${stats.away.shots}")
-                                DenseStatRow("${stats.home.shotsOnTarget}", "Shots on Target", "${stats.away.shotsOnTarget}")
-                                DenseStatRow("${stats.home.corners}", "Corners", "${stats.away.corners}")
-                                DenseStatRow("${stats.home.fouls}", "Fouls", "${stats.away.fouls}")
-                                DenseStatRow("${stats.home.yellowCards}", "Yellow Cards", "${stats.away.yellowCards}")
-                            }
-                        }
-
-                        HorizontalDivider(color = FmBorder, thickness = 1.dp)
-
-                        // Bottom Half: Player Ratings
-                        Column(modifier = Modifier.weight(0.58f).fillMaxWidth()) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(Color(0xFF11151C))
-                                    .padding(horizontal = 10.dp, vertical = 5.dp),
-                            ) {
-                                Text("PLAYER RATINGS", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 9.sp, letterSpacing = 0.5.sp)
-                            }
-                            HorizontalDivider(color = FmBorder, thickness = 1.dp)
-
-                            val participatingPlayers = result.playerRatings.entries
-                                .mapNotNull { (pId, rating) ->
-                                    state.currentSeason.players[pId]?.let { p -> Triple(p, rating, result.playerStats[pId]) }
-                                }
-                                .sortedByDescending { it.second }
-
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                            ) {
-                                items(participatingPlayers) { (player, rating, pStats) ->
-                                    val isUserPlayer = player.id in state.humanSquad.map { it.id }
-                                    DenseRatingRow(player, rating, pStats, isUserPlayer)
-                                    HorizontalDivider(color = FmBorder.copy(alpha = 0.3f), thickness = 0.5.dp)
-                                }
-                            }
-                        }
-                    }
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(FmContinueGreen)
+                        .clickable { onSimulateMatchday() }
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                ) {
+                    Text("CONTINUE >", color = Color.Black, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
-        } else {
-            // ─── COMPACT MODE (< 600dp): Vertical Stacking ───────────────────
-            LazyColumn(modifier = Modifier.fillMaxSize().background(FmDarkBg)) {
-                stickyHeader {
-                    Column(
+
+            Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                Column(
+                    modifier = Modifier
+                        .weight(0.50f)
+                        .fillMaxHeight()
+                        .background(FmSurface)
+                        .border(1.dp, FmBorder),
+                ) {
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color(0xFF141820))
-                            .border(1.dp, FmBorder),
+                            .background(Color(0xFF11151C))
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
                     ) {
-                        if (!season.isFinished) {
-                            val nextFixture = season.fixtures.getOrNull(season.nextFixtureIndex)
-                            if (nextFixture != null) {
-                                val opponentId = if (nextFixture.home.clubId == humanClubId) nextFixture.away.clubId else nextFixture.home.clubId
-                                val opponent = state.game.club(opponentId)
-                                val isHome = nextFixture.home.clubId == humanClubId
+                        Text("MATCH TIMELINE", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 11.sp, letterSpacing = 0.5.sp)
+                    }
+                    HorizontalDivider(color = FmBorder, thickness = 1.dp)
 
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { onSimulateMatchday() }
-                                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                ) {
-                                    Column {
-                                        Text("ROUND $nextMatchday", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 9.sp)
-                                        Text(
-                                            if (isHome) "${state.humanClub.name} vs ${opponent.name}" else "${opponent.name} vs ${state.humanClub.name}",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            color = Color.White,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 13.sp,
-                                        )
-                                    }
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(3.dp))
-                                            .background(FmContinueGreen)
-                                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                                    ) {
-                                        Text("SIMULATE", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                                    }
-                                }
-                            }
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                    ) {
+                        items(result.events.filter { it.type != MatchEventType.POSSESSION }) { event ->
+                            EventTimelineRow(event)
+                            HorizontalDivider(color = FmBorder.copy(alpha = 0.3f), thickness = 0.5.dp)
                         }
-                        HorizontalDivider(color = FmBorder, thickness = 1.dp)
                     }
                 }
 
-                if (result != null) {
-                    item {
-                        val homeClub = state.game.club(result.homeClubId)
-                        val awayClub = state.game.club(result.awayClubId)
-                        val stats = result.stats
-
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(FmSurface)
-                                .border(1.dp, FmBorder, RoundedCornerShape(4.dp))
-                                .padding(10.dp),
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(homeClub.name, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                                Text("${result.homeScore}  –  ${result.awayScore}", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color.White)
-                                Text(awayClub.name, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 13.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            HorizontalDivider(color = FmBorder, thickness = 1.dp)
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                                MatchStatChip("${stats.home.shots}", "Shots", "${stats.away.shots}")
-                                MatchStatChip("${stats.home.shotsOnTarget}", "Target", "${stats.away.shotsOnTarget}")
-                                MatchStatChip("${(stats.homePossession * 100).toInt()}%", "Poss", "${(stats.awayPossession * 100).toInt()}%")
-                                MatchStatChip("${stats.home.corners}", "Corners", "${stats.away.corners}")
-                            }
-                        }
-                    }
-
-                    // Incidents Header
-                    item {
+                Column(
+                    modifier = Modifier
+                        .weight(0.50f)
+                        .fillMaxHeight()
+                        .background(FmSurface)
+                        .border(1.dp, FmBorder),
+                ) {
+                    Column(modifier = Modifier.weight(0.42f).fillMaxWidth()) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(Color(0xFF11151C))
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
                         ) {
-                            Text("MATCH TIMELINE", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 9.sp)
+                            Text("MATCH STATISTICS", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 11.sp, letterSpacing = 0.5.sp)
+                        }
+                        HorizontalDivider(color = FmBorder, thickness = 1.dp)
+
+                        val stats = result.stats
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 12.dp, vertical = 4.dp),
+                            verticalArrangement = Arrangement.SpaceAround,
+                        ) {
+                            DenseStatRow("${(stats.homePossession * 100).toInt()}%", "Possession", "${(stats.awayPossession * 100).toInt()}%")
+                            DenseStatRow("${stats.home.shots}", "Total Shots", "${stats.away.shots}")
+                            DenseStatRow("${stats.home.shotsOnTarget}", "Shots on Target", "${stats.away.shotsOnTarget}")
+                            DenseStatRow("${stats.home.corners}", "Corners", "${stats.away.corners}")
+                            DenseStatRow("${stats.home.fouls}", "Fouls", "${stats.away.fouls}")
+                            DenseStatRow("${stats.home.yellowCards}", "Yellow Cards", "${stats.away.yellowCards}")
                         }
                     }
 
-                    items(result.events.filter { it.type != MatchEventType.POSSESSION }) { event ->
-                        EventTimelineRow(event)
-                        HorizontalDivider(color = FmBorder.copy(alpha = 0.3f), thickness = 0.5.dp)
-                    }
+                    HorizontalDivider(color = FmBorder, thickness = 1.dp)
 
-                    // Ratings Header
-                    if (result.playerRatings.isNotEmpty()) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(Color(0xFF11151C))
-                                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                            ) {
-                                Text("PLAYER RATINGS", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 9.sp)
-                            }
+                    Column(modifier = Modifier.weight(0.58f).fillMaxWidth()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF11151C))
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                        ) {
+                            Text("PLAYER RATINGS", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 11.sp, letterSpacing = 0.5.sp)
                         }
+                        HorizontalDivider(color = FmBorder, thickness = 1.dp)
 
                         val participatingPlayers = result.playerRatings.entries
                             .mapNotNull { (pId, rating) ->
@@ -339,11 +189,61 @@ fun MatchdayScreen(
                             }
                             .sortedByDescending { it.second }
 
-                        items(participatingPlayers) { (player, rating, pStats) ->
-                            val isUserPlayer = player.id in state.humanSquad.map { it.id }
-                            DenseRatingRow(player, rating, pStats, isUserPlayer)
-                            HorizontalDivider(color = FmBorder.copy(alpha = 0.3f), thickness = 0.5.dp)
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                        ) {
+                            items(participatingPlayers) { (player, rating, pStats) ->
+                                val isUserPlayer = player.id in state.humanSquad.map { it.id }
+                                DenseRatingRow(player, rating, pStats, isUserPlayer)
+                                HorizontalDivider(color = FmBorder.copy(alpha = 0.3f), thickness = 0.5.dp)
+                            }
                         }
+                    }
+                }
+            }
+        } else {
+            // Pre-match preview: no result yet (start of career or after rollover).
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth(0.7f)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(FmSurface)
+                        .border(1.dp, FmBorder, RoundedCornerShape(6.dp))
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (season.isFinished) {
+                        Text("SEASON COMPLETE", color = FmRatingHigh, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("Press NEW SEASON in the top bar to start the next campaign.", color = FmTextSecondary, fontSize = 12.sp, textAlign = TextAlign.Center)
+                    } else if (nextFixture != null) {
+                        val opponentId = if (nextFixture.home.clubId == humanClubId) nextFixture.away.clubId else nextFixture.home.clubId
+                        val opponent = state.game.club(opponentId)
+                        val isHome = nextFixture.home.clubId == humanClubId
+                        Text("ROUND $nextMatchday • ${if (isHome) "HOME" else "AWAY"} • ${nextFixture.date}", color = FmAccentCyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            if (isHome) "${state.humanClub.name} vs ${opponent.name}" else "${opponent.name} vs ${state.humanClub.name}",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            textAlign = TextAlign.Center,
+                        )
+                        state.lineupValidationError?.let {
+                            Text(it, color = FmRatingLow, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(FmContinueGreen)
+                                .clickable { onSimulateMatchday() }
+                                .padding(horizontal = 20.dp, vertical = 10.dp),
+                        ) {
+                            Text("SIMULATE MATCHDAY", color = Color.Black, fontWeight = FontWeight.Black, fontSize = 12.sp)
+                        }
+                    } else {
+                        Text("No fixtures scheduled.", color = FmTextMuted, fontSize = 12.sp)
                     }
                 }
             }
@@ -370,18 +270,18 @@ private fun EventTimelineRow(event: com.footballmanager.simulation.MatchEvent) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(30.dp)
+            .height(40.dp)
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text("${event.minute}'", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontWeight = FontWeight.Bold, fontSize = 10.sp, modifier = Modifier.width(26.dp))
-        Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(14.dp))
+        Text("${event.minute}'", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontWeight = FontWeight.Bold, fontSize = 11.sp, modifier = Modifier.width(30.dp))
+        Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(16.dp))
         Text(
             text = if (event.description.isNotBlank()) event.description else "${event.side}: ${event.type.name.replace('_', ' ')}",
             style = MaterialTheme.typography.bodySmall,
             color = FmTextPrimary,
-            fontSize = 11.sp,
+            fontSize = 12.sp,
             maxLines = 1,
         )
     }
@@ -394,9 +294,9 @@ private fun DenseStatRow(homeValue: String, label: String, awayValue: String) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(homeValue, fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.width(36.dp))
-        Text(label, fontSize = 10.sp, color = FmTextMuted, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
-        Text(awayValue, fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold, textAlign = TextAlign.End, modifier = Modifier.width(36.dp))
+        Text(homeValue, fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.width(44.dp))
+        Text(label, fontSize = 11.sp, color = FmTextMuted, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+        Text(awayValue, fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.Bold, textAlign = TextAlign.End, modifier = Modifier.width(44.dp))
     }
 }
 
@@ -416,18 +316,18 @@ private fun DenseRatingRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(32.dp)
-            .background(if (isUserPlayer) FmSurfaceSelected else Color.Transparent)
+            .height(40.dp)
+            .background(if (isUserPlayer) com.footballmanager.app.ui.theme.FmSurfaceSelected else Color.Transparent)
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(player.bestPosition().name, style = MaterialTheme.typography.labelSmall, color = FmAccentCyan, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-            Text(player.name, style = MaterialTheme.typography.bodySmall, color = if (isUserPlayer) Color.White else FmTextPrimary, fontSize = 11.sp, maxLines = 1)
+            Text(player.bestPosition().name, style = MaterialTheme.typography.labelSmall, color = FmAccentCyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Text(player.name, style = MaterialTheme.typography.bodySmall, color = if (isUserPlayer) Color.White else FmTextPrimary, fontSize = 12.sp, maxLines = 1)
             pStats?.let { st ->
-                if (st.goals > 0) Text("G:${st.goals}", fontSize = 9.5.sp, color = FmRatingHigh, fontWeight = FontWeight.Bold)
-                if (st.assists > 0) Text("A:${st.assists}", fontSize = 9.5.sp, color = FmAccentCyan, fontWeight = FontWeight.Bold)
+                if (st.goals > 0) Text("G:${st.goals}", fontSize = 11.sp, color = FmRatingHigh, fontWeight = FontWeight.Bold)
+                if (st.assists > 0) Text("A:${st.assists}", fontSize = 11.sp, color = FmAccentCyan, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -435,21 +335,22 @@ private fun DenseRatingRow(
             modifier = Modifier
                 .clip(RoundedCornerShape(2.dp))
                 .background(ratingColor.copy(alpha = 0.2f))
-                .padding(horizontal = 5.dp, vertical = 1.dp),
+                .padding(horizontal = 6.dp, vertical = 2.dp),
         ) {
-            Text("$rating", style = MaterialTheme.typography.labelSmall, color = ratingColor, fontWeight = FontWeight.Black, fontSize = 10.sp)
+            Text("$rating", style = MaterialTheme.typography.labelSmall, color = ratingColor, fontWeight = FontWeight.Black, fontSize = 11.sp)
         }
     }
 }
 
 @Composable
 private fun MatchStatChip(homeVal: String, label: String, awayVal: String) {
+    Spacer(modifier = Modifier.width(4.dp))
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(homeVal, style = MaterialTheme.typography.titleSmall, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-            Text("-", style = MaterialTheme.typography.titleSmall, color = FmTextMuted, fontSize = 11.sp)
-            Text(awayVal, style = MaterialTheme.typography.titleSmall, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Text(homeVal, style = MaterialTheme.typography.titleSmall, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text("-", style = MaterialTheme.typography.titleSmall, color = FmTextMuted, fontSize = 12.sp)
+            Text(awayVal, style = MaterialTheme.typography.titleSmall, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
-        Text(label, style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 9.sp)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 11.sp)
     }
 }

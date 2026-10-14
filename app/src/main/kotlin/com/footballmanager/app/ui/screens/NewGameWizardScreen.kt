@@ -79,7 +79,7 @@ fun NewGameWizardScreen(
                 .fillMaxWidth()
                 .background(FmSurface)
                 .border(1.dp, FmBorder)
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
@@ -97,7 +97,7 @@ fun NewGameWizardScreen(
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // Left: Manager Setup

@@ -63,7 +63,7 @@ fun PlayerCardNode(
                 text = slot.name,
                 style = MaterialTheme.typography.labelSmall,
                 color = ElectricBlue,
-                fontSize = 9.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
             )
             Spacer(modifier = Modifier.width(4.dp))
@@ -71,14 +71,14 @@ fun PlayerCardNode(
                 text = "${player.effectiveOverall(slot)}",
                 style = MaterialTheme.typography.labelSmall,
                 color = StadiumEmerald,
-                fontSize = 10.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
             )
         }
         Text(
             text = player.name.split(" ").lastOrNull() ?: player.name,
             style = MaterialTheme.typography.bodyMedium,
-            fontSize = 10.sp,
+            fontSize = 11.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             color = Color.White,

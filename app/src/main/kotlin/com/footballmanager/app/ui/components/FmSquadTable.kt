@@ -129,7 +129,7 @@ fun FmSquadTable(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Text("FILTER:", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 9.sp)
+                Text("FILTER:", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 11.sp)
                 val filterOptions = listOf(
                     null to "ALL",
                     PositionGroup.GOALKEEPER to "GK",
@@ -152,7 +152,7 @@ fun FmSquadTable(
                             style = MaterialTheme.typography.labelSmall,
                             color = if (isSelected) Color.White else FmTextSecondary,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 9.5.sp,
+                            fontSize = 11.sp,
                         )
                     }
                 }
