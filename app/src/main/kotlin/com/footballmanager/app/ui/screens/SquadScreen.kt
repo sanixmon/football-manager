@@ -1,5 +1,30 @@
 package com.footballmanager.app.ui.screens
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.footballmanager.app.ui.components.FmTabRow
+import com.footballmanager.app.ui.components.SaveLoadDialog
+import com.footballmanager.app.ui.components.SaveLoadMode
+import com.footballmanager.app.ui.theme.FmAccentBlue
+import com.footballmanager.app.ui.theme.FmAccentCyan
+import com.footballmanager.app.ui.theme.FmBorder
+import com.footballmanager.app.ui.theme.FmRatingHigh
+import com.footballmanager.app.ui.theme.FmSurface
+import com.footballmanager.app.ui.theme.FmSurfaceAlt
+import com.footballmanager.app.ui.theme.FmTextMuted
+import com.footballmanager.app.ui.theme.FmTextSecondary
+import com.footballmanager.model.TrainingFocus
+import com.footballmanager.model.TrainingIntensity
+import com.footballmanager.serialization.SaveSlot
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -64,6 +89,10 @@ fun SquadScreen(
     onCompleteDeal: (bidId: Long) -> Unit = {},
     onCancelDeal: (bidId: Long) -> Unit = {},
     onRolloverSeason: () -> Unit = {},
+    onUpdatePlayerTraining: (playerId: Long, focus: TrainingFocus, intensity: TrainingIntensity) -> Unit = { _, _, _ -> },
+    onUpdateClubTraining: (clubId: Long, focus: TrainingFocus, intensity: TrainingIntensity) -> Unit = { _, _, _ -> },
+    onSelectSaveSlot: (SaveSlot) -> Unit = {},
+    onDismissSaveLoadDialog: () -> Unit = {},
     onMainMenuClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -119,44 +148,90 @@ fun SquadScreen(
                 )
 
                 FmNavSection.SQUAD -> {
-                    if (isExpanded) {
-                        // ── Landscape 70/30 Split Pane: Table 70% | Persistent Inspector 30% ──
-                        Row(modifier = contentModifier.fillMaxSize()) {
-                            FmSquadTable(
-                                players = squad,
-                                selectedPlayerId = selectedPlayer?.id,
-                                onPlayerClick = { clicked ->
-                                    selectedPlayerId = clicked.id
-                                },
-                                modifier = Modifier.weight(0.68f).fillMaxHeight(),
-                            )
+                    Column(modifier = contentModifier.fillMaxSize()) {
+                        FmTabRow(
+                            selectedTab = state.activeSquadTab,
+                            onTabSelected = onTabSelected,
+                        )
 
-                            if (selectedPlayer != null) {
-                                PlayerDetailContent(
-                                    player = selectedPlayer,
-                                    onClose = {},
-                                    modifier = Modifier.weight(0.32f).fillMaxHeight(),
-                                )
+                        if (state.activeSquadTab == FmSquadTab.TRAINING) {
+                            // Team Training Facilities & Quick Focus Strip
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(FmSurface)
+                                    .border(1.dp, FmBorder)
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text("FACILITIES:", fontSize = 9.5.sp, color = FmTextMuted, fontWeight = FontWeight.Bold)
+                                    Text("Level ${state.humanClub.facilities.trainingLevel}/5", fontSize = 10.sp, color = FmRatingHigh, fontWeight = FontWeight.Bold)
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text("TEAM FOCUS:", fontSize = 9.sp, color = FmTextMuted)
+                                    listOf(TrainingFocus.BALANCED, TrainingFocus.ATTACKING, TrainingFocus.DEFENDING, TrainingFocus.PHYSICAL, TrainingFocus.TECHNICAL).forEach { f ->
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(3.dp))
+                                                .background(FmSurfaceAlt)
+                                                .border(1.dp, FmBorder, RoundedCornerShape(3.dp))
+                                                .clickable { onUpdateClubTraining(state.humanClubId, f, TrainingIntensity.NORMAL) }
+                                                .padding(horizontal = 6.dp, vertical = 2.dp),
+                                        ) {
+                                            Text(f.name.take(3), fontSize = 8.5.sp, color = FmTextSecondary)
+                                        }
+                                    }
+                                }
                             }
                         }
-                    } else {
-                        // ── Portrait Compact: Full-Width Table + Tap opens Detail Sheet ────
-                        Box(modifier = contentModifier.fillMaxSize()) {
-                            FmSquadTable(
-                                players = squad,
-                                selectedPlayerId = selectedPlayer?.id,
-                                onPlayerClick = { clicked ->
-                                    selectedPlayerId = clicked.id
-                                    showMobileDetailSheet = true
-                                },
-                                modifier = Modifier.fillMaxSize(),
-                            )
 
-                            if (showMobileDetailSheet && selectedPlayer != null) {
-                                PlayerDetailBottomSheet(
-                                    player = selectedPlayer,
-                                    onDismiss = { showMobileDetailSheet = false },
+                        if (isExpanded) {
+                            // ── Landscape 70/30 Split Pane: Table 70% | Persistent Inspector 30% ──
+                            Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                                FmSquadTable(
+                                    players = squad,
+                                    selectedPlayerId = selectedPlayer?.id,
+                                    onPlayerClick = { clicked ->
+                                        selectedPlayerId = clicked.id
+                                    },
+                                    modifier = Modifier.weight(0.68f).fillMaxHeight(),
                                 )
+
+                                if (selectedPlayer != null) {
+                                    PlayerDetailContent(
+                                        player = selectedPlayer,
+                                        onClose = {},
+                                        onUpdateTraining = { focus, intensity ->
+                                            onUpdatePlayerTraining(selectedPlayer.id, focus, intensity)
+                                        },
+                                        modifier = Modifier.weight(0.32f).fillMaxHeight(),
+                                    )
+                                }
+                            }
+                        } else {
+                            // ── Portrait Compact: Full-Width Table + Tap opens Detail Sheet ────
+                            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                                FmSquadTable(
+                                    players = squad,
+                                    selectedPlayerId = selectedPlayer?.id,
+                                    onPlayerClick = { clicked ->
+                                        selectedPlayerId = clicked.id
+                                        showMobileDetailSheet = true
+                                    },
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+
+                                if (showMobileDetailSheet && selectedPlayer != null) {
+                                    PlayerDetailBottomSheet(
+                                        player = selectedPlayer,
+                                        onDismiss = { showMobileDetailSheet = false },
+                                        onUpdateTraining = { focus, intensity ->
+                                            onUpdatePlayerTraining(selectedPlayer.id, focus, intensity)
+                                        },
+                                    )
+                                }
                             }
                         }
                     }
@@ -263,6 +338,24 @@ fun SquadScreen(
                     )
                 }
             }
+        }
+
+        if (state.showSaveDialog) {
+            SaveLoadDialog(
+                mode = SaveLoadMode.SAVE,
+                slots = state.availableSaveSlots,
+                onSelectSlot = onSelectSaveSlot,
+                onDismiss = onDismissSaveLoadDialog,
+            )
+        }
+
+        if (state.showLoadDialog) {
+            SaveLoadDialog(
+                mode = SaveLoadMode.LOAD,
+                slots = state.availableSaveSlots,
+                onSelectSlot = onSelectSaveSlot,
+                onDismiss = onDismissSaveLoadDialog,
+            )
         }
     }
 }

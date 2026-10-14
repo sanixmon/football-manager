@@ -14,15 +14,34 @@ import com.footballmanager.simulation.season.FixtureGenerator
 import com.footballmanager.simulation.season.SeasonState
 import com.footballmanager.simulation.season.StandingEntry
 import com.footballmanager.simulation.season.Standings
+import com.footballmanager.calculator.PlayerDevelopmentCalculator
+import com.footballmanager.calculator.WageExpectationCalculator
+import com.footballmanager.model.Facilities
+import com.footballmanager.simulation.season.SeasonResult
 import java.time.LocalDate
 import kotlin.random.Random
+
+data class RolloverOutput(
+    val nextSeason: SeasonState,
+    val completedSeasonResult: SeasonResult,
+)
 
 class SeasonRolloverUseCase(
     private val random: Random = Random(2026),
 ) {
 
-    fun execute(currentSeason: SeasonState): SeasonState {
+    fun execute(currentSeason: SeasonState): SeasonState =
+        executeWithResult(currentSeason).nextSeason
+
+    fun executeWithResult(currentSeason: SeasonState): RolloverOutput {
         require(currentSeason.isFinished) { "Cannot rollover an unfinished season" }
+
+        val completedSeasonResult = SeasonResult(
+            league = currentSeason.league,
+            fixtures = currentSeason.fixtures,
+            results = currentSeason.results,
+            standings = currentSeason.standings,
+        )
 
         val standings = currentSeason.standings.entries
         val nextYear = currentSeason.currentDate.year + 1
@@ -50,12 +69,50 @@ class SeasonRolloverUseCase(
             }
         }
 
-        // 2. Age players & handle contracts
+        // 2. Age players, apply annual development & handle expiring contracts
         val updatedPlayers = currentSeason.players.mapValues { (_, player) ->
-            player.copy(
-                age = player.age + 1,
+            val club = updatedClubs.values.firstOrNull { it.squad.contains(player.id) }
+            val facilities = club?.facilities ?: Facilities()
+            val seasonStats = currentSeason.playerStats[player.id]
+
+            // Apply realistic player development / age curve decline
+            val developedPlayer = PlayerDevelopmentCalculator.applyDevelopment(
+                player = player,
+                facilities = facilities,
+                seasonStats = seasonStats,
+                random = random,
+            )
+
+            val newAge = developedPlayer.age + 1
+
+            // Contract rollover check
+            val updatedContract = if (developedPlayer.contract.expiresOn <= newStartDate) {
+                if (newAge <= 33 || developedPlayer.bestOverall() >= 65) {
+                    val newWage = WageExpectationCalculator.calculateExpectedWage(
+                        player = developedPlayer,
+                        promisedStatus = developedPlayer.contract.squadStatus,
+                    )
+                    developedPlayer.contract.copy(
+                        weeklyWage = newWage,
+                        expiresOn = LocalDate.of(nextYear + 2, 6, 30),
+                    )
+                } else {
+                    // Veteran extension (1 year)
+                    developedPlayer.contract.copy(
+                        expiresOn = LocalDate.of(nextYear + 1, 6, 30),
+                    )
+                }
+            } else {
+                developedPlayer.contract
+            }
+
+            developedPlayer.copy(
+                age = newAge,
+                contract = updatedContract,
                 fitness = 100,
                 morale = 75,
+                injuryStatus = null,
+                suspensionStatus = null,
             )
         }.toMutableMap()
 
@@ -108,7 +165,7 @@ class SeasonRolloverUseCase(
         val fixtures = FixtureGenerator.generate(teams, newStartDate)
         val initialStandings = Standings(teams.map { StandingEntry(it) }.sortedWith(Standings.comparator))
 
-        return SeasonState(
+        val nextSeasonState = SeasonState(
             league = currentSeason.league,
             teams = teams,
             fixtures = fixtures,
@@ -125,6 +182,11 @@ class SeasonRolloverUseCase(
             playerStats = emptyMap(),
             boardObjectives = currentSeason.boardObjectives,
             managerProfile = updatedManager,
+        )
+
+        return RolloverOutput(
+            nextSeason = nextSeasonState,
+            completedSeasonResult = completedSeasonResult,
         )
     }
 }

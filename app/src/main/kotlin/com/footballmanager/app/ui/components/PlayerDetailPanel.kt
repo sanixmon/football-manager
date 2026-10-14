@@ -1,5 +1,6 @@
 package com.footballmanager.app.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -57,11 +58,14 @@ import com.footballmanager.app.ui.theme.FmTextSecondary
 import com.footballmanager.model.Attribute
 import com.footballmanager.model.Player
 import com.footballmanager.model.PositionGroup
+import com.footballmanager.model.TrainingFocus
+import com.footballmanager.model.TrainingIntensity
 
 @Composable
 fun PlayerDetailContent(
     player: Player,
     onClose: () -> Unit,
+    onUpdateTraining: (TrainingFocus, TrainingIntensity) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
@@ -307,6 +311,99 @@ fun PlayerDetailContent(
                 )
             }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        HorizontalDivider(color = FmBorder, thickness = 1.dp)
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // Training & Development Section
+        Text(
+            text = "TRAINING & DEVELOPMENT",
+            style = MaterialTheme.typography.labelSmall,
+            color = FmAccentBlue,
+            fontSize = 11.sp,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        val potentialHeadroom = (player.potential - player.bestOverall()).coerceAtLeast(0)
+        Text(
+            text = "Growth Ceiling: ${player.potential} OVR (Headroom: +$potentialHeadroom pts)",
+            style = MaterialTheme.typography.bodySmall,
+            color = FmTextSecondary,
+            fontSize = 10.5.sp,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text("Training Focus:", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 10.sp)
+        Spacer(modifier = Modifier.height(4.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            TrainingFocus.entries.take(4).forEach { focus ->
+                val isSelected = player.trainingFocus == focus
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(if (isSelected) FmAccentBlue else FmSurfaceAlt)
+                        .border(1.dp, if (isSelected) FmAccentCyan else FmBorder, RoundedCornerShape(3.dp))
+                        .clickable { onUpdateTraining(focus, player.trainingIntensity) }
+                        .padding(horizontal = 6.dp, vertical = 3.dp),
+                ) {
+                    Text(
+                        text = focus.name.take(3),
+                        fontSize = 9.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        color = if (isSelected) Color.White else FmTextSecondary,
+                    )
+                }
+            }
+            TrainingFocus.entries.drop(4).forEach { focus ->
+                val isSelected = player.trainingFocus == focus
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(if (isSelected) FmAccentBlue else FmSurfaceAlt)
+                        .border(1.dp, if (isSelected) FmAccentCyan else FmBorder, RoundedCornerShape(3.dp))
+                        .clickable { onUpdateTraining(focus, player.trainingIntensity) }
+                        .padding(horizontal = 6.dp, vertical = 3.dp),
+                ) {
+                    Text(
+                        text = focus.name.take(4),
+                        fontSize = 9.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        color = if (isSelected) Color.White else FmTextSecondary,
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+        Text("Intensity:", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 10.sp)
+        Spacer(modifier = Modifier.height(4.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            TrainingIntensity.entries.forEach { intensity ->
+                val isSelected = player.trainingIntensity == intensity
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(if (isSelected) (if (intensity == TrainingIntensity.INTENSIVE) FmPosAtt else FmAccentBlue) else FmSurfaceAlt)
+                        .border(1.dp, if (isSelected) Color.White else FmBorder, RoundedCornerShape(3.dp))
+                        .clickable { onUpdateTraining(player.trainingFocus, intensity) }
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                ) {
+                    Text(
+                        text = intensity.name,
+                        fontSize = 9.5.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        color = if (isSelected) Color.White else FmTextSecondary,
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -388,6 +485,7 @@ private fun String.capitalizeWords(): String =
 fun PlayerDetailBottomSheet(
     player: Player?,
     onDismiss: () -> Unit,
+    onUpdateTraining: (TrainingFocus, TrainingIntensity) -> Unit = { _, _ -> },
 ) {
     if (player == null) return
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
@@ -402,6 +500,7 @@ fun PlayerDetailBottomSheet(
         PlayerDetailContent(
             player = player,
             onClose = onDismiss,
+            onUpdateTraining = onUpdateTraining,
             modifier = Modifier.fillMaxHeight(0.85f),
         )
     }

@@ -1,5 +1,10 @@
 package com.footballmanager.app.ui.screens
 
+import androidx.compose.foundation.clickable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -49,7 +54,9 @@ import com.footballmanager.app.ui.viewmodel.GameUiState
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun StandingsScreen(state: GameUiState, modifier: Modifier = Modifier) {
-    val entries = state.currentSeason.standings.entries
+    var showPreviousSeason by remember { mutableStateOf(false) }
+    val lastSeason = state.game.lastSeason
+    val entries = if (showPreviousSeason && lastSeason != null) lastSeason.standings.entries else state.currentSeason.standings.entries
     val humanPos = entries.indexOfFirst { it.team.clubId == state.humanClubId }
 
     LazyColumn(modifier = modifier.fillMaxSize().background(FmDarkBg)) {
@@ -74,6 +81,31 @@ fun StandingsScreen(state: GameUiState, modifier: Modifier = Modifier) {
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                     )
+                }
+                if (lastSeason != null) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(if (!showPreviousSeason) FmAccentBlue else FmSurfaceAlt)
+                                .border(1.dp, if (!showPreviousSeason) FmAccentCyan else FmBorder, RoundedCornerShape(3.dp))
+                                .clickable { showPreviousSeason = false }
+                                .padding(horizontal = 8.dp, vertical = 3.dp),
+                        ) {
+                            Text("CURRENT SEASON", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = if (!showPreviousSeason) Color.White else FmTextSecondary)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(if (showPreviousSeason) FmAccentBlue else FmSurfaceAlt)
+                                .border(1.dp, if (showPreviousSeason) FmAccentCyan else FmBorder, RoundedCornerShape(3.dp))
+                                .clickable { showPreviousSeason = true }
+                                .padding(horizontal = 8.dp, vertical = 3.dp),
+                        ) {
+                            Text("PREVIOUS SEASON (Champ: ${lastSeason.champion.team.name})", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = if (showPreviousSeason) Color.White else FmTextSecondary)
+                        }
+                    }
                 }
                 Spacer(modifier = Modifier.height(6.dp))
                 HorizontalDivider(color = FmBorder, thickness = 1.dp)

@@ -47,6 +47,7 @@ enum class FmSquadTab(val label: String) {
     DYNAMICS("Dynamics"),
     STATS("Stats"),
     CONTRACTS("Contracts"),
+    TRAINING("Training"),
 }
 
 @Composable

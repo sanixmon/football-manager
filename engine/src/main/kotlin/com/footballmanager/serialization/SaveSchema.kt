@@ -8,6 +8,8 @@ import com.footballmanager.model.ManagerProfile
 import com.footballmanager.model.PlayerSeasonStats
 import com.footballmanager.model.Position
 import com.footballmanager.model.SquadStatus
+import com.footballmanager.model.TrainingFocus
+import com.footballmanager.model.TrainingIntensity
 import com.footballmanager.model.TransferBid
 import com.footballmanager.model.TransferRecord
 import com.footballmanager.simulation.Formation
@@ -74,6 +76,8 @@ data class PlayerDto(
     val suspensionMatchesRemaining: Int? = null,
     val suspensionReason: String? = null,
     val graphicsId: Long? = null,
+    val trainingFocus: TrainingFocus = TrainingFocus.BALANCED,
+    val trainingIntensity: TrainingIntensity = TrainingIntensity.NORMAL,
 )
 
 @Serializable

@@ -54,8 +54,8 @@ import com.footballmanager.app.ui.viewmodel.GameUiState
 fun MainMenuScreen(
     state: GameUiState,
     onContinueGame: () -> Unit,
+    onLoadGame: () -> Unit = {},
     onNewGame: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     val club = state.humanClub
     val manager = state.currentSeason.managerProfile?.name ?: "Manager"
@@ -148,6 +148,14 @@ fun MainMenuScreen(
                 icon = Icons.Outlined.PlayArrow,
                 isPrimary = true,
                 onClick = onContinueGame,
+            )
+
+            MenuButton(
+                title = "LOAD SAVED CAREER",
+                subtitle = "Select from saved career slots",
+                icon = Icons.Outlined.FolderOpen,
+                isPrimary = false,
+                onClick = onLoadGame,
             )
 
             MenuButton(

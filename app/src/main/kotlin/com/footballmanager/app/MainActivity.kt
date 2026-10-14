@@ -42,9 +42,18 @@ class MainActivity : ComponentActivity() {
                         com.footballmanager.app.ui.screens.MainMenuScreen(
                             state = state,
                             onContinueGame = { viewModel.goToAppScreen(com.footballmanager.app.ui.viewmodel.AppScreen.IN_GAME) },
+                            onLoadGame = { viewModel.showLoadDialog(true) },
                             onNewGame = { viewModel.goToAppScreen(com.footballmanager.app.ui.viewmodel.AppScreen.NEW_GAME_WIZARD) },
                             modifier = Modifier.fillMaxSize(),
                         )
+                        if (state.showLoadDialog) {
+                            com.footballmanager.app.ui.components.SaveLoadDialog(
+                                mode = com.footballmanager.app.ui.components.SaveLoadMode.LOAD,
+                                slots = state.availableSaveSlots,
+                                onSelectSlot = { slot -> viewModel.loadCareer(slot) },
+                                onDismiss = { viewModel.showLoadDialog(false) },
+                            )
+                        }
                     }
 
                     com.footballmanager.app.ui.viewmodel.AppScreen.NEW_GAME_WIZARD -> {
@@ -73,13 +82,23 @@ class MainActivity : ComponentActivity() {
                             onPressingSelected = viewModel::updatePressing,
                             onPassingSelected = viewModel::updatePassing,
                             onDirectTransfer = viewModel::executeDirectTransfer,
-                            onSaveCareer = { viewModel.saveCareer() },
-                            onLoadCareer = { viewModel.loadCareer() },
+                            onSaveCareer = { viewModel.showSaveDialog(true) },
+                            onLoadCareer = { viewModel.showLoadDialog(true) },
                             onSubmitBid = viewModel::submitTransferBid,
                             onOfferContract = viewModel::offerContractTerms,
                             onCompleteDeal = viewModel::completeTransferDeal,
                             onCancelDeal = viewModel::cancelTransferDeal,
                             onRolloverSeason = viewModel::rolloverToNextSeason,
+                            onUpdatePlayerTraining = viewModel::updatePlayerTraining,
+                            onUpdateClubTraining = viewModel::updateClubTraining,
+                            onSelectSaveSlot = { slot ->
+                                if (state.showSaveDialog) viewModel.saveCareer(slot)
+                                else if (state.showLoadDialog) viewModel.loadCareer(slot)
+                            },
+                            onDismissSaveLoadDialog = {
+                                viewModel.showSaveDialog(false)
+                                viewModel.showLoadDialog(false)
+                            },
                             onMainMenuClick = { viewModel.goToAppScreen(com.footballmanager.app.ui.viewmodel.AppScreen.MAIN_MENU) },
                         )
                     }

@@ -47,6 +47,9 @@ class GameViewModel(
     private val applyMatchResultToWorldUseCase: ApplyMatchResultToWorldUseCase = ApplyMatchResultToWorldUseCase(),
     private val advanceDayUseCase: AdvanceDayUseCase = AdvanceDayUseCase(),
     private val seasonRolloverUseCase: SeasonRolloverUseCase = SeasonRolloverUseCase(),
+    private val playerDevelopmentUseCase: com.footballmanager.usecase.PlayerDevelopmentUseCase = com.footballmanager.usecase.PlayerDevelopmentUseCase(),
+    private val saveCareerUseCase: com.footballmanager.usecase.SaveCareerUseCase = com.footballmanager.usecase.SaveCareerUseCase(),
+    private val loadCareerUseCase: com.footballmanager.usecase.LoadCareerUseCase = com.footballmanager.usecase.LoadCareerUseCase(),
 ) : ViewModel() {
 
     /** Backward-compatible convenience constructor. */
@@ -94,6 +97,7 @@ class GameViewModel(
                 game = initialGame,
                 currentSeason = season,
                 humanClubId = 1L,
+                availableSaveSlots = loadCareerUseCase.getAllSlotsMetadata(),
                 lastMatchResult = lastResult,
             ),
         )
@@ -332,11 +336,41 @@ class GameViewModel(
     }
 
     // ── Persistence: Save & Load Career ──────────────────────────────────
+    fun refreshSaveSlots() {
+        _uiState.update { it.copy(availableSaveSlots = loadCareerUseCase.getAllSlotsMetadata()) }
+    }
+
+    fun showSaveDialog(show: Boolean) {
+        if (show) refreshSaveSlots()
+        _uiState.update { it.copy(showSaveDialog = show) }
+    }
+
+    fun showLoadDialog(show: Boolean) {
+        if (show) refreshSaveSlots()
+        _uiState.update { it.copy(showLoadDialog = show) }
+    }
+
+    fun showTrainingDialog(show: Boolean) {
+        _uiState.update { it.copy(showTrainingDialog = show) }
+    }
+
+    fun showSeasonHistoryDialog(show: Boolean) {
+        _uiState.update { it.copy(showSeasonHistoryDialog = show) }
+    }
+
     fun saveCareer(slot: SaveSlot = SaveSlot.MANUAL) {
         try {
             val state = _uiState.value
+            saveCareerUseCase.execute(state.game, slot)
             gameRepository.saveGame(state.game)
-            _uiState.update { it.copy(saveStatusMessage = "Career saved successfully (${slot.name.lowercase()})") }
+            val updatedSlots = loadCareerUseCase.getAllSlotsMetadata()
+            _uiState.update {
+                it.copy(
+                    saveStatusMessage = "Career saved successfully (${slot.displayName})",
+                    availableSaveSlots = updatedSlots,
+                    showSaveDialog = false,
+                )
+            }
         } catch (e: Exception) {
             _uiState.update { it.copy(saveStatusMessage = "Failed to save: ${e.message}") }
         }
@@ -344,16 +378,25 @@ class GameViewModel(
 
     fun loadCareer(slot: SaveSlot = SaveSlot.MANUAL) {
         try {
-            val reloaded = gameRepository.reload()
+            val reloaded = try {
+                loadCareerUseCase.execute(slot)
+            } catch (_: Exception) {
+                gameRepository.reload()
+            }
             val season = reloaded.currentSeason ?: error("No current season in save")
+            gameRepository.saveGame(reloaded)
+            val updatedSlots = loadCareerUseCase.getAllSlotsMetadata()
             _uiState.update {
                 it.copy(
                     game = reloaded,
                     currentSeason = season,
                     humanClubId = season.humanClubId ?: it.humanClubId,
                     lastMatchResult = season.results.lastOrNull { r -> r.homeClubId == it.humanClubId || r.awayClubId == it.humanClubId },
-                    saveStatusMessage = "Career loaded successfully (${slot.name.lowercase()})",
+                    saveStatusMessage = "Career loaded successfully (${slot.displayName})",
                     lineupValidationError = null,
+                    availableSaveSlots = updatedSlots,
+                    showLoadDialog = false,
+                    currentScreen = AppScreen.IN_GAME,
                 )
             }
         } catch (e: Exception) {
@@ -363,6 +406,41 @@ class GameViewModel(
 
     fun clearSaveStatus() {
         _uiState.update { it.copy(saveStatusMessage = null) }
+    }
+
+    // ── Training Management ────────────────────────────────────────────────
+    fun updatePlayerTraining(playerId: Long, focus: com.footballmanager.model.TrainingFocus, intensity: com.footballmanager.model.TrainingIntensity) {
+        _uiState.update { state ->
+            val updatedSeason = playerDevelopmentUseCase.setPlayerTraining(
+                season = state.currentSeason,
+                playerId = playerId,
+                focus = focus,
+                intensity = intensity,
+            )
+            val updatedGame = state.game.copy(
+                players = updatedSeason.players,
+                currentSeason = updatedSeason,
+            )
+            gameRepository.saveGame(updatedGame)
+            state.copy(game = updatedGame, currentSeason = updatedSeason)
+        }
+    }
+
+    fun updateClubTraining(clubId: Long, focus: com.footballmanager.model.TrainingFocus, intensity: com.footballmanager.model.TrainingIntensity) {
+        _uiState.update { state ->
+            val updatedSeason = playerDevelopmentUseCase.setClubSquadTraining(
+                season = state.currentSeason,
+                clubId = clubId,
+                focus = focus,
+                intensity = intensity,
+            )
+            val updatedGame = state.game.copy(
+                players = updatedSeason.players,
+                currentSeason = updatedSeason,
+            )
+            gameRepository.saveGame(updatedGame)
+            state.copy(game = updatedGame, currentSeason = updatedSeason)
+        }
     }
 
     // ── Direct Transfers ──────────────────────────────────────────────────
@@ -426,14 +504,15 @@ class GameViewModel(
     fun rolloverToNextSeason() {
         _uiState.update { state ->
             if (!state.currentSeason.isFinished) return@update state
-            val nextSeason = seasonRolloverUseCase.execute(state.currentSeason)
+            val rolloverResult = seasonRolloverUseCase.executeWithResult(state.currentSeason)
+            val nextSeason = rolloverResult.nextSeason
             val updatedGame = state.game.copy(
                 clubs = nextSeason.clubs,
                 players = nextSeason.players,
                 currentSeason = nextSeason,
                 currentDate = nextSeason.currentDate,
+                lastSeason = rolloverResult.completedSeasonResult,
             )
-            gameRepository.saveGame(updatedGame)
             state.copy(
                 game = updatedGame,
                 currentSeason = nextSeason,

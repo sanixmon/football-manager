@@ -9,6 +9,7 @@ import com.footballmanager.simulation.Lineup
 import com.footballmanager.simulation.MatchResult
 import com.footballmanager.simulation.Team
 import com.footballmanager.simulation.season.SeasonState
+import com.footballmanager.serialization.SaveSlotMetadata
 
 enum class AppScreen {
     MAIN_MENU,
@@ -32,6 +33,11 @@ data class GameUiState(
     val transferErrorMessage: String? = null,
     val transferSuccessMessage: String? = null,
     val lineupValidationError: String? = null,
+    val availableSaveSlots: List<SaveSlotMetadata> = emptyList(),
+    val showSaveDialog: Boolean = false,
+    val showLoadDialog: Boolean = false,
+    val showTrainingDialog: Boolean = false,
+    val showSeasonHistoryDialog: Boolean = false,
 ) {
     val humanClub: Club get() = game.club(humanClubId)
     val humanSquad: List<Player>

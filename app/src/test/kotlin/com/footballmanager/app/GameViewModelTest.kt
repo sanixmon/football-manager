@@ -226,4 +226,78 @@ class GameViewModelTest {
         val afterFirstCallIndex = vm.uiState.value.currentSeason.nextFixtureIndex
         assertTrue(afterFirstCallIndex > initialIndex)
     }
+
+    @Test
+    fun `updating player training modifies training focus and intensity`() {
+        val vm = GameViewModel()
+        val playerId = vm.uiState.value.humanSquad.first().id
+
+        vm.updatePlayerTraining(
+            playerId = playerId,
+            focus = com.footballmanager.model.TrainingFocus.ATTACKING,
+            intensity = com.footballmanager.model.TrainingIntensity.INTENSIVE,
+        )
+
+        val updatedPlayer = vm.uiState.value.humanSquad.first { it.id == playerId }
+        assertEquals(com.footballmanager.model.TrainingFocus.ATTACKING, updatedPlayer.trainingFocus)
+        assertEquals(com.footballmanager.model.TrainingIntensity.INTENSIVE, updatedPlayer.trainingIntensity)
+    }
+
+    @Test
+    fun `updating club training modifies all squad members`() {
+        val vm = GameViewModel()
+        val clubId = vm.uiState.value.humanClubId
+
+        vm.updateClubTraining(
+            clubId = clubId,
+            focus = com.footballmanager.model.TrainingFocus.DEFENDING,
+            intensity = com.footballmanager.model.TrainingIntensity.NORMAL,
+        )
+
+        val squad = vm.uiState.value.humanSquad
+        for (player in squad) {
+            if (player.naturalPositions.any { it.name == "GK" }) {
+                assertEquals(com.footballmanager.model.TrainingFocus.GOALKEEPING, player.trainingFocus)
+            } else {
+                assertEquals(com.footballmanager.model.TrainingFocus.DEFENDING, player.trainingFocus)
+            }
+        }
+    }
+
+    @Test
+    fun `save and load dialog visibility toggles correctly`() {
+        val vm = GameViewModel()
+        assertFalse(vm.uiState.value.showSaveDialog)
+        assertFalse(vm.uiState.value.showLoadDialog)
+
+        vm.showSaveDialog(true)
+        assertTrue(vm.uiState.value.showSaveDialog)
+
+        vm.showSaveDialog(false)
+        assertFalse(vm.uiState.value.showSaveDialog)
+
+        vm.showLoadDialog(true)
+        assertTrue(vm.uiState.value.showLoadDialog)
+
+        vm.showLoadDialog(false)
+        assertFalse(vm.uiState.value.showLoadDialog)
+    }
+
+    @Test
+    fun `season rollover saves completed season into game lastSeason`() {
+        val vm = GameViewModel()
+        // Fast forward season to completion
+        while (!vm.uiState.value.currentSeason.isFinished) {
+            vm.playNextMatchday()
+        }
+        assertTrue(vm.uiState.value.currentSeason.isFinished)
+
+        vm.rolloverToNextSeason()
+
+        val state = vm.uiState.value
+        assertEquals(0, state.currentSeason.nextFixtureIndex)
+        assertNotNull(state.game.lastSeason)
+        assertEquals(90, state.game.lastSeason!!.results.size)
+        assertEquals(10, state.game.lastSeason!!.standings.entries.size)
+    }
 }

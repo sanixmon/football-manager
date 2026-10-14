@@ -15,6 +15,23 @@ enum class SquadStatus {
 }
 
 @Serializable
+enum class TrainingFocus {
+    BALANCED,
+    ATTACKING,
+    DEFENDING,
+    PHYSICAL,
+    TECHNICAL,
+    GOALKEEPING,
+}
+
+@Serializable
+enum class TrainingIntensity {
+    LIGHT,
+    NORMAL,
+    INTENSIVE,
+}
+
+@Serializable
 data class Contract(
     val weeklyWage: Long = 0L,
     @Serializable(with = LocalDateSerializer::class)
@@ -55,6 +72,8 @@ data class Player(
     val suspensionStatus: SuspensionStatus? = null,
     /** Optional external graphics id (e.g. a community facepack id). */
     val graphicsId: Long? = null,
+    val trainingFocus: TrainingFocus = TrainingFocus.BALANCED,
+    val trainingIntensity: TrainingIntensity = TrainingIntensity.NORMAL,
 ) {
     init {
         require(name.isNotBlank()) { "player name must not be blank" }

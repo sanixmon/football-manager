@@ -63,6 +63,8 @@ object SaveGameMapper {
                 suspensionMatchesRemaining = p.suspensionStatus?.matchesRemaining,
                 suspensionReason = p.suspensionStatus?.reason,
                 graphicsId = p.graphicsId,
+                trainingFocus = p.trainingFocus,
+                trainingIntensity = p.trainingIntensity,
             )
         }
 
@@ -198,6 +200,8 @@ object SaveGameMapper {
                 injuryStatus = injury,
                 suspensionStatus = suspension,
                 graphicsId = pDto.graphicsId,
+                trainingFocus = pDto.trainingFocus,
+                trainingIntensity = pDto.trainingIntensity,
             )
             pDto.id to player
         }

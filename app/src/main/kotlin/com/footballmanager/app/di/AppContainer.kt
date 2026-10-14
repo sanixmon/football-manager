@@ -30,6 +30,9 @@ interface AppContainer {
     val advanceDayUseCase: com.footballmanager.usecase.AdvanceDayUseCase
     val seasonRolloverUseCase: com.footballmanager.usecase.SeasonRolloverUseCase
     val seasonRunner: SeasonRunner
+    val playerDevelopmentUseCase: com.footballmanager.usecase.PlayerDevelopmentUseCase
+    val saveCareerUseCase: com.footballmanager.usecase.SaveCareerUseCase
+    val loadCareerUseCase: com.footballmanager.usecase.LoadCareerUseCase
     val gameViewModelFactory: ViewModelProvider.Factory
 }
 
@@ -37,6 +40,8 @@ class DefaultAppContainer(
     saveFile: File? = null,
     defaultGameProvider: () -> Game = { SeedData.game() },
 ) : AppContainer {
+
+    private val saveDirectory: File = saveFile?.parentFile ?: File(".")
 
     override val gameRepository: GameRepository by lazy {
         if (saveFile != null) {
@@ -94,6 +99,18 @@ class DefaultAppContainer(
         SeasonRunner()
     }
 
+    override val playerDevelopmentUseCase: com.footballmanager.usecase.PlayerDevelopmentUseCase by lazy {
+        com.footballmanager.usecase.PlayerDevelopmentUseCase()
+    }
+
+    override val saveCareerUseCase: com.footballmanager.usecase.SaveCareerUseCase by lazy {
+        com.footballmanager.usecase.SaveCareerUseCase(baseDirectory = saveDirectory)
+    }
+
+    override val loadCareerUseCase: com.footballmanager.usecase.LoadCareerUseCase by lazy {
+        com.footballmanager.usecase.LoadCareerUseCase(baseDirectory = saveDirectory)
+    }
+
     override val gameViewModelFactory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -109,6 +126,9 @@ class DefaultAppContainer(
                     applyMatchResultToWorldUseCase = applyMatchResultToWorldUseCase,
                     advanceDayUseCase = advanceDayUseCase,
                     seasonRolloverUseCase = seasonRolloverUseCase,
+                    playerDevelopmentUseCase = playerDevelopmentUseCase,
+                    saveCareerUseCase = saveCareerUseCase,
+                    loadCareerUseCase = loadCareerUseCase,
                 ) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
