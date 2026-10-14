@@ -30,6 +30,8 @@ import com.footballmanager.model.TrainingIntensity
 import com.footballmanager.serialization.SaveSlot
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -211,7 +213,7 @@ fun SquadScreen(
                                     FmEmptyState(
                                         title = "No player selected",
                                         detail = "Select a player from the table to inspect attributes, contract and training.",
-                                        icon = androidx.compose.material.icons.Icons.Outlined.Person,
+                                        icon = Icons.Outlined.Person,
                                         modifier = Modifier.weight(0.32f).fillMaxHeight(),
                                     )
                                 }
