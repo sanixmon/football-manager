@@ -68,13 +68,11 @@ class MultiSeasonContinuityTest {
             gameSeason2.saveToFile(tempFile.absolutePath)
             val reloaded = Game.loadFromFile(tempFile.absolutePath)
 
-            val currentSeason = reloaded.currentSeason
-            assertNotNull(currentSeason)
+            val currentSeason = requireNotNull(reloaded.currentSeason)
             assertEquals(0, currentSeason.nextFixtureIndex)
             assertEquals(90, currentSeason.fixtures.size)
 
-            val lastSeason = reloaded.lastSeason
-            assertNotNull(lastSeason)
+            val lastSeason = requireNotNull(reloaded.lastSeason)
             assertEquals(champion1.team.clubId, lastSeason.champion.team.clubId)
             assertEquals(90, lastSeason.results.size)
             assertEquals(10, lastSeason.standings.entries.size)
