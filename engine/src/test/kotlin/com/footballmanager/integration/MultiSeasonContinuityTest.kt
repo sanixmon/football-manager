@@ -68,17 +68,19 @@ class MultiSeasonContinuityTest {
             gameSeason2.saveToFile(tempFile.absolutePath)
             val reloaded = Game.loadFromFile(tempFile.absolutePath)
 
-            assertNotNull(reloaded.currentSeason)
-            assertEquals(0, reloaded.currentSeason!!.nextFixtureIndex)
-            assertEquals(90, reloaded.currentSeason!!.fixtures.size)
+            val currentSeason = reloaded.currentSeason
+            assertNotNull(currentSeason)
+            assertEquals(0, currentSeason.nextFixtureIndex)
+            assertEquals(90, currentSeason.fixtures.size)
 
-            assertNotNull(reloaded.lastSeason)
-            assertEquals(champion1.team.clubId, reloaded.lastSeason!!.champion.team.clubId)
-            assertEquals(90, reloaded.lastSeason!!.results.size)
-            assertEquals(10, reloaded.lastSeason!!.standings.entries.size)
+            val lastSeason = reloaded.lastSeason
+            assertNotNull(lastSeason)
+            assertEquals(champion1.team.clubId, lastSeason.champion.team.clubId)
+            assertEquals(90, lastSeason.results.size)
+            assertEquals(10, lastSeason.standings.entries.size)
 
             // 5. Play Matchdays in Season 2 from Reloaded Game
-            var season2Played = reloaded.currentSeason!!
+            var season2Played = currentSeason
             repeat(3) {
                 season2Played = runner.playNextMatchday(season2Played)
             }

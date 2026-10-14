@@ -110,7 +110,7 @@ class GameViewModelTest {
         val state = vm.uiState.value
         assertNotNull(state.lastMatchResult)
         assertNotNull(state.saveStatusMessage)
-        assertTrue(state.saveStatusMessage?.contains("Autosaved") == true)
+        assertTrue(state.saveStatusMessage.contains("Autosaved"))
         assertEquals(null, state.lineupValidationError)
     }
 
@@ -209,7 +209,7 @@ class GameViewModelTest {
         val stateAfter = vm.uiState.value
         // Must report error in message
         assertNotNull(stateAfter.saveStatusMessage)
-        assertTrue(stateAfter.saveStatusMessage?.contains("Failed to load") == true)
+        assertTrue(stateAfter.saveStatusMessage.contains("Failed to load"))
         // Current valid state must NOT be destroyed or replaced with default empty game
         assertEquals(stateBefore.game.name, stateAfter.game.name)
         assertEquals(stateBefore.currentSeason.nextFixtureIndex, stateAfter.currentSeason.nextFixtureIndex)

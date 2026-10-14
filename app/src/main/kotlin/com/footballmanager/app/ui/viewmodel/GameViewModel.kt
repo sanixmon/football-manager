@@ -378,14 +378,15 @@ class GameViewModel(
 
     fun loadCareer(slot: SaveSlot = SaveSlot.MANUAL) {
         try {
-            val reloaded = try {
-                loadCareerUseCase.execute(slot)
-            } catch (_: Exception) {
+            val reloaded = if (slot == SaveSlot.MANUAL) {
                 gameRepository.reload()
+            } else {
+                val fromSlot = loadCareerUseCase.execute(slot)
+                gameRepository.saveGame(fromSlot)
+                fromSlot
             }
             val season = reloaded.currentSeason ?: error("No current season in save")
-            gameRepository.saveGame(reloaded)
-            val updatedSlots = loadCareerUseCase.getAllSlotsMetadata()
+            val updatedSlots = try { loadCareerUseCase.getAllSlotsMetadata() } catch (_: Exception) { emptyList() }
             _uiState.update {
                 it.copy(
                     game = reloaded,
