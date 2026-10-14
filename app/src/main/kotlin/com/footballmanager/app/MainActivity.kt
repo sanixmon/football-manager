@@ -1,5 +1,6 @@
 package com.footballmanager.app
 
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -25,6 +26,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Landscape-only game: lock to sensor landscape (both rotations, no portrait).
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
 
         // Immersive sticky fullscreen: hide system navigation and status bars
         WindowCompat.setDecorFitsSystemWindows(window, false)

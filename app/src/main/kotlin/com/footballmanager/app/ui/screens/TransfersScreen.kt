@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -106,15 +105,12 @@ fun TransfersScreen(
     }
     val selectedMarketEntry = allMarketPlayers.firstOrNull { it.first.id == selectedMarketPlayerId } ?: allMarketPlayers.firstOrNull()
 
-    BoxWithConstraints(
+    // Landscape-only: 60% market list | 40% inspector. No portrait branch.
+    Column(
         modifier = modifier
             .fillMaxSize()
             .background(FmDarkBg),
     ) {
-        val availableWidth = maxWidth
-        val isExpanded = availableWidth >= 600.dp
-
-        Column(modifier = Modifier.fillMaxSize()) {
             // ─── Header: Finances ─────────────────────────────────────────
             Column(
                 modifier = Modifier
@@ -130,7 +126,7 @@ fun TransfersScreen(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Icon(Icons.Outlined.SwapHoriz, contentDescription = null, tint = FmAccentCyan, modifier = Modifier.size(16.dp))
-                        Text("TRANSFER MARKET", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 9.5.sp, letterSpacing = 0.5.sp)
+                        Text("TRANSFER MARKET", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 11.sp, letterSpacing = 0.5.sp)
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         Text("Balance: $${"%,d".format(state.humanFinance.balance)}", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
@@ -197,72 +193,46 @@ fun TransfersScreen(
             // ─── Main Content Area ────────────────────────────────────────
             when (selectedSubTab) {
                 0 -> {
-                    // Market Subtab
-                    if (isExpanded) {
-                        // ── Expanded Mode: 60% Market List | 40% Inspector & Action ──
-                        Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                            // Left 60%: Filter + Player List
-                            Column(modifier = Modifier.weight(0.60f).fillMaxHeight()) {
-                                // Filter chips
-                                MarketFilterRow(selectedGroupFilter) { selectedGroupFilter = it }
-
-                                LazyColumn(
-                                    modifier = Modifier.weight(1f).fillMaxWidth(),
-                                    contentPadding = PaddingValues(6.dp),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                                ) {
-                                    items(filteredMarketPlayers, key = { it.first.id }) { (player, club) ->
-                                        val isSelected = player.id == selectedMarketPlayerId
-                                        val fee = (TransferValuationCalculator.calculateMarketValue(player) * 0.9).toLong().coerceAtLeast(50_000L)
-                                        MarketPlayerRow(
-                                            player = player,
-                                            owningClub = club,
-                                            fee = fee,
-                                            isSelected = isSelected,
-                                            onClick = { selectedMarketPlayerId = player.id },
-                                        )
-                                    }
-                                }
-                            }
-
-                            // Right 40%: Persistent Profile & Buy Action
-                            selectedMarketEntry?.let { (player, club) ->
-                                val fee = (TransferValuationCalculator.calculateMarketValue(player) * 0.9).toLong().coerceAtLeast(50_000L)
-                                val canAfford = state.humanFinance.balance >= fee
-
-                                SelectedPlayerInspector(
-                                    player = player,
-                                    owningClub = club,
-                                    fee = fee,
-                                    canAfford = canAfford,
-                                    currentBalance = state.humanFinance.balance,
-                                    onBuy = { onDirectTransfer(player.id, club.id, humanClubId, fee) },
-                                    modifier = Modifier.weight(0.40f).fillMaxHeight(),
-                                )
-                            }
-                        }
-                    } else {
-                        // ── Compact Mode: Full-Width List with Inline Buy ──────────
-                        Column(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                    // Market subtab: landscape 60/40 list + inspector.
+                    Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                        // Left 60%: Filter + Player List
+                        Column(modifier = Modifier.weight(0.60f).fillMaxHeight()) {
+                            // Filter chips
                             MarketFilterRow(selectedGroupFilter) { selectedGroupFilter = it }
 
                             LazyColumn(
                                 modifier = Modifier.weight(1f).fillMaxWidth(),
-                                contentPadding = PaddingValues(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp),
+                                contentPadding = PaddingValues(6.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp),
                             ) {
                                 items(filteredMarketPlayers, key = { it.first.id }) { (player, club) ->
+                                    val isSelected = player.id == selectedMarketPlayerId
                                     val fee = (TransferValuationCalculator.calculateMarketValue(player) * 0.9).toLong().coerceAtLeast(50_000L)
-                                    val canAfford = state.humanFinance.balance >= fee
-                                    MarketPlayerRowWithAction(
+                                    MarketPlayerRow(
                                         player = player,
                                         owningClub = club,
                                         fee = fee,
-                                        canAfford = canAfford,
-                                        onBuy = { onDirectTransfer(player.id, club.id, humanClubId, fee) },
+                                        isSelected = isSelected,
+                                        onClick = { selectedMarketPlayerId = player.id },
                                     )
                                 }
                             }
+                        }
+
+                        // Right 40%: Persistent Profile & Buy Action
+                        selectedMarketEntry?.let { (player, club) ->
+                            val fee = (TransferValuationCalculator.calculateMarketValue(player) * 0.9).toLong().coerceAtLeast(50_000L)
+                            val canAfford = state.humanFinance.balance >= fee
+
+                            SelectedPlayerInspector(
+                                player = player,
+                                owningClub = club,
+                                fee = fee,
+                                canAfford = canAfford,
+                                currentBalance = state.humanFinance.balance,
+                                onBuy = { onDirectTransfer(player.id, club.id, humanClubId, fee) },
+                                modifier = Modifier.weight(0.40f).fillMaxHeight(),
+                            )
                         }
                     }
                 }
@@ -363,7 +333,6 @@ fun TransfersScreen(
                 }
             }
         }
-    }
 }
 
 @Composable
@@ -380,7 +349,7 @@ private fun MarketFilterRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text("FILTER:", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 9.sp)
+        Text("FILTER:", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 11.sp)
         val filterOptions = listOf(
             null to "ALL",
             PositionGroup.GOALKEEPER to "GK",
@@ -403,7 +372,7 @@ private fun MarketFilterRow(
                     style = MaterialTheme.typography.labelSmall,
                     color = if (isSelected) Color.White else FmTextSecondary,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    fontSize = 9.5.sp,
+                    fontSize = 11.sp,
                 )
             }
         }

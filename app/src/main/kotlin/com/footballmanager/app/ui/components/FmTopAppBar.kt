@@ -68,7 +68,7 @@ fun FmTopAppBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp)
+                .height(42.dp)
                 .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -122,7 +122,7 @@ fun FmTopAppBar(
                         text = if (breadcrumb.isNotBlank()) breadcrumb else "Liga Nusantara • $currentDateText",
                         style = MaterialTheme.typography.bodySmall,
                         color = FmTextSecondary,
-                        fontSize = 9.5.sp,
+                        fontSize = 11.sp,
                         maxLines = 1,
                     )
                 }
@@ -146,7 +146,7 @@ fun FmTopAppBar(
                         text = "#$leaguePosition • $leaguePoints pts",
                         style = MaterialTheme.typography.labelSmall,
                         color = if (leaguePosition <= 3) FmRatingHigh else FmTextPrimary,
-                        fontSize = 9.5.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                     )
                 }
@@ -164,7 +164,7 @@ fun FmTopAppBar(
                             text = balanceText,
                             style = MaterialTheme.typography.labelSmall,
                             color = FmContinueGreen,
-                            fontSize = 9.5.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                         )
                     }
@@ -189,7 +189,7 @@ fun FmTopAppBar(
                         style = MaterialTheme.typography.labelLarge,
                         color = continueTextColor,
                         fontWeight = FontWeight.Black,
-                        fontSize = 11.5.sp,
+                        fontSize = 12.sp,
                         letterSpacing = 0.5.sp,
                     )
                     Icon(
