@@ -23,14 +23,11 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -143,7 +140,7 @@ fun PlayerDetailContent(
                                 text = bestPos.name,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = posBadgeColor,
-                                fontSize = 9.sp,
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                             )
                         }
@@ -352,7 +349,7 @@ fun PlayerDetailContent(
                 ) {
                     Text(
                         text = focus.name.take(3),
-                        fontSize = 9.sp,
+                        fontSize = 11.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                         color = if (isSelected) Color.White else FmTextSecondary,
                     )
@@ -370,7 +367,7 @@ fun PlayerDetailContent(
                 ) {
                     Text(
                         text = focus.name.take(4),
-                        fontSize = 9.sp,
+                        fontSize = 11.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                         color = if (isSelected) Color.White else FmTextSecondary,
                     )
@@ -397,7 +394,7 @@ fun PlayerDetailContent(
                 ) {
                     Text(
                         text = intensity.name,
-                        fontSize = 9.5.sp,
+                        fontSize = 11.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                         color = if (isSelected) Color.White else FmTextSecondary,
                     )
@@ -479,29 +476,3 @@ private fun AttributeSection(
 
 private fun String.capitalizeWords(): String =
     split(" ").joinToString(" ") { it.replaceFirstChar { char -> char.uppercase() } }
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun PlayerDetailBottomSheet(
-    player: Player?,
-    onDismiss: () -> Unit,
-    onUpdateTraining: (TrainingFocus, TrainingIntensity) -> Unit = { _, _ -> },
-) {
-    if (player == null) return
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = FmSurface,
-        scrimColor = Color.Black.copy(alpha = 0.6f),
-        dragHandle = null,
-    ) {
-        PlayerDetailContent(
-            player = player,
-            onClose = onDismiss,
-            onUpdateTraining = onUpdateTraining,
-            modifier = Modifier.fillMaxHeight(0.85f),
-        )
-    }
-}

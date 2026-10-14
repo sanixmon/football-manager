@@ -59,6 +59,16 @@ fun StandingsScreen(state: GameUiState, modifier: Modifier = Modifier) {
     val entries = if (showPreviousSeason && lastSeason != null) lastSeason.standings.entries else state.currentSeason.standings.entries
     val humanPos = entries.indexOfFirst { it.team.clubId == state.humanClubId }
 
+    val userResults = state.currentSeason.results
+        .filter { it.homeClubId == state.humanClubId || it.awayClubId == state.humanClubId }
+        .takeLast(5)
+    val upcoming = state.currentSeason.fixtures
+        .filter {
+            (it.home.clubId == state.humanClubId || it.away.clubId == state.humanClubId) &&
+                it.date >= state.currentSeason.currentDate
+        }
+        .take(3)
+
     LazyColumn(modifier = modifier.fillMaxSize().background(FmDarkBg)) {
         stickyHeader {
             Column(
@@ -130,19 +140,74 @@ fun StandingsScreen(state: GameUiState, modifier: Modifier = Modifier) {
             }
         }
 
+        // Your-club context for the current season only.
+        if (!showPreviousSeason) {
+            item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(FmSurface)
+                    .border(1.dp, FmBorder, RoundedCornerShape(6.dp))
+                    .padding(10.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("YOUR SEASON", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 10.sp, letterSpacing = 1.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        if (userResults.isEmpty()) {
+                            Text("No matches yet", fontSize = 11.sp, color = FmTextMuted)
+                        } else {
+                            userResults.forEach { r ->
+                                val isHome = r.homeClubId == state.humanClubId
+                                val win = (isHome && r.isHomeWin) || (!isHome && r.isAwayWin)
+                                val (text, bg) = when {
+                                    win -> "W" to FmRatingHigh
+                                    r.isDraw -> "D" to FmRatingMed
+                                    else -> "L" to FmRatingLow
+                                }
+                                Box(
+                                    modifier = Modifier.size(18.dp).clip(CircleShape).background(bg),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(text, color = Color.Black, fontSize = 9.sp, fontWeight = FontWeight.Black)
+                                }
+                            }
+                        }
+                    }
+                }
+                if (upcoming.isEmpty()) {
+                    Text("No further fixtures scheduled.", fontSize = 11.sp, color = FmTextMuted)
+                } else {
+                    upcoming.forEach { fx ->
+                        val isHome = fx.home.clubId == state.humanClubId
+                        val oppId = if (isHome) fx.away.clubId else fx.home.clubId
+                        Text(
+                            "${if (isHome) "H" else "A"} vs ${state.game.club(oppId).shortName} • Round ${fx.round} • ${fx.date}",
+                            fontSize = 11.sp,
+                            color = FmTextSecondary,
+                        )
+                    }
+                }
+            }
+        }
+
+        }
+
         itemsIndexed(entries) { index, entry ->
             val isHuman = entry.team.clubId == state.humanClubId
             val position = index + 1
 
-            // Zone coloring: Top 3 = Champions, 4-6 = European, Bottom 3 = Relegation
-            val zoneColor = when {
-                position <= 3 -> FmRatingHigh.copy(alpha = 0.08f)
-                position <= 6 -> FmAccentBlue.copy(alpha = 0.06f)
-                position >= entries.size - 2 -> FmRatingLow.copy(alpha = 0.08f)
-                else -> if (index % 2 == 0) FmSurface else FmSurfaceAlt
-            }
-
-            val rowBg = if (isHuman) FmSurfaceSelected.copy(alpha = 0.8f) else zoneColor
+            // Zone treatment is deliberately neutral: leader tint + your-club
+            // highlight only. The engine defines no continental/relegation rules.
+            val rowBg = if (isHuman) FmSurfaceSelected.copy(alpha = 0.8f)
+            else if (position == 1) FmRatingHigh.copy(alpha = 0.10f)
+            else if (index % 2 == 0) FmSurface else FmSurfaceAlt
 
             Row(
                 modifier = Modifier
@@ -158,9 +223,8 @@ fun StandingsScreen(state: GameUiState, modifier: Modifier = Modifier) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     val posColor = when {
-                        position <= 3 -> FmRatingHigh
-                        position <= 6 -> FmAccentBlue
-                        position >= entries.size - 2 -> FmRatingLow
+                        position == 1 -> FmRatingHigh
+                        position <= 4 -> FmAccentBlue
                         else -> FmTextMuted
                     }
                     Text(
@@ -216,7 +280,7 @@ fun StandingsScreen(state: GameUiState, modifier: Modifier = Modifier) {
             HorizontalDivider(color = FmBorder.copy(alpha = 0.3f), thickness = 0.5.dp)
         }
 
-        // Zone legend at the bottom
+        // Table key at the bottom (no invented competition rules).
         item {
             Spacer(modifier = Modifier.height(12.dp))
             Column(
@@ -229,11 +293,11 @@ fun StandingsScreen(state: GameUiState, modifier: Modifier = Modifier) {
                     .padding(10.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Text("ZONES", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 10.sp, letterSpacing = 1.sp)
+                Text("TABLE KEY", style = MaterialTheme.typography.labelSmall, color = FmTextMuted, fontSize = 10.sp, letterSpacing = 1.sp)
                 Spacer(modifier = Modifier.height(4.dp))
-                ZoneLegend("Champions Zone", FmRatingHigh)
-                ZoneLegend("European Zone", FmAccentBlue)
-                ZoneLegend("Relegation Zone", FmRatingLow)
+                ZoneLegend("League leader", FmRatingHigh)
+                ZoneLegend("Top 4", FmAccentBlue)
+                ZoneLegend("Your club (highlighted row)", FmContinueGreen)
             }
             Spacer(modifier = Modifier.height(16.dp))
         }

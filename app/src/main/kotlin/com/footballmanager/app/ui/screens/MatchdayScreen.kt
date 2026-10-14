@@ -59,6 +59,7 @@ import com.footballmanager.simulation.MatchEventType
 fun MatchdayScreen(
     state: GameUiState,
     onSimulateMatchday: () -> Unit,
+    onOpenTactics: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val result = state.lastMatchResult
@@ -232,6 +233,16 @@ fun MatchdayScreen(
                         )
                         state.lineupValidationError?.let {
                             Text(it, color = FmRatingLow, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(Color(0xFF1A202A))
+                                    .border(1.dp, FmAccentBlue, RoundedCornerShape(4.dp))
+                                    .clickable { onOpenTactics() }
+                                    .padding(horizontal = 20.dp, vertical = 10.dp),
+                            ) {
+                                Text("REVIEW LINEUP IN TACTICS", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            }
                         }
                         Box(
                             modifier = Modifier

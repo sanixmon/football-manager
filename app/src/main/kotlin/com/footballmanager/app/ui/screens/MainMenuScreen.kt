@@ -59,6 +59,9 @@ fun MainMenuScreen(
 ) {
     val club = state.humanClub
     val manager = state.currentSeason.managerProfile?.name ?: "Manager"
+    val leagueName = state.game.competitions.values.filterIsInstance<com.footballmanager.model.League>().firstOrNull()?.name.orEmpty()
+    val clubCount = state.game.clubs.size
+    val leagueLine = if (leagueName.isNotBlank()) "$leagueName • $clubCount clubs" else "$clubCount clubs"
 
     Box(
         modifier = modifier
@@ -108,7 +111,7 @@ fun MainMenuScreen(
                         color = Color.White,
                     )
                     Text(
-                        text = "MOBILE 2026 EDITION • LANDSCAPE",
+                        text = "MOBILE 2026 EDITION",
                         style = MaterialTheme.typography.labelSmall,
                         color = FmContinueGreen,
                         fontWeight = FontWeight.Bold,
@@ -116,7 +119,7 @@ fun MainMenuScreen(
                     )
                 }
                 Text(
-                    text = "Pure JVM Domain Architecture · Verified Clean",
+                    text = leagueLine,
                     fontSize = 11.sp,
                     color = FmTextMuted,
                 )

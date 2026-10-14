@@ -38,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.footballmanager.app.ui.components.FmEmptyState
 import com.footballmanager.app.ui.components.FmNavSection
 import com.footballmanager.app.ui.components.FmNavigationRail
 import com.footballmanager.app.ui.components.FmSquadTab
@@ -47,6 +48,7 @@ import com.footballmanager.app.ui.components.PlayerDetailContent
 import com.footballmanager.app.ui.theme.FmContinueGreen
 import com.footballmanager.app.ui.theme.FmDarkBg
 import com.footballmanager.app.ui.viewmodel.GameUiState
+import com.footballmanager.model.League
 import com.footballmanager.simulation.Formation
 import com.footballmanager.simulation.Mentality
 import com.footballmanager.simulation.Passing
@@ -71,28 +73,25 @@ fun SquadScreen(
     onDirectTransfer: (playerId: Long, fromClubId: Long, toClubId: Long, fee: Long) -> Unit = { _, _, _, _ -> },
     onSaveCareer: () -> Unit = {},
     onLoadCareer: () -> Unit = {},
-    onSubmitBid: (playerId: Long, fee: Long) -> Unit = { _, _ -> },
-    onOfferContract: (bidId: Long, weeklyWage: Long, years: Int, squadStatus: com.footballmanager.model.SquadStatus) -> Unit = { _, _, _, _ -> },
-    onCompleteDeal: (bidId: Long) -> Unit = {},
-    onCancelDeal: (bidId: Long) -> Unit = {},
+    onDismissSaveStatus: () -> Unit = {},
     onRolloverSeason: () -> Unit = {},
     onUpdatePlayerTraining: (playerId: Long, focus: TrainingFocus, intensity: TrainingIntensity) -> Unit = { _, _, _ -> },
     onUpdateClubTraining: (clubId: Long, focus: TrainingFocus, intensity: TrainingIntensity) -> Unit = { _, _, _ -> },
     onSelectSaveSlot: (SaveSlot) -> Unit = {},
     onDismissSaveLoadDialog: () -> Unit = {},
-    onMainMenuClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val squad = state.humanSquad
     val activeNavSection = state.activeNavSection
 
     var selectedPlayerId by remember(squad) {
-        mutableStateOf(squad.firstOrNull()?.id)
+        mutableStateOf<Long?>(squad.firstOrNull()?.id)
     }
-    val selectedPlayer = squad.firstOrNull { it.id == selectedPlayerId } ?: squad.firstOrNull()
+    val selectedPlayer = selectedPlayerId?.let { id -> squad.firstOrNull { it.id == id } }
 
     val myPosition = state.currentSeason.standings.entries.indexOfFirst { it.team.clubId == state.humanClubId } + 1
     val myPoints = state.currentSeason.standings.entries.firstOrNull { it.team.clubId == state.humanClubId }?.points ?: 0
+    val leagueName = state.game.competitions.values.filterIsInstance<League>().firstOrNull()?.name.orEmpty()
 
     val isSeasonFinished = state.currentSeason.isFinished
     val isMatchToday = state.isMatchdayToday
@@ -123,7 +122,7 @@ fun SquadScreen(
                 FmTopAppBar(
                     clubName = state.humanClub.name,
                     currentDateText = "${state.currentSeason.currentDate}",
-                    breadcrumb = "Liga Nusantara • ${activeNavSection.title}",
+                    breadcrumb = if (leagueName.isNotBlank()) "$leagueName • ${activeNavSection.title}" else activeNavSection.title,
                     leaguePosition = myPosition,
                     leaguePoints = myPoints,
                     balanceText = "$${"%,d".format(state.humanFinance.balance)}",
@@ -141,12 +140,16 @@ fun SquadScreen(
                         onSaveCareer = onSaveCareer,
                         onLoadCareer = onLoadCareer,
                         onRolloverSeason = onRolloverSeason,
+                        onDismissSaveStatus = onDismissSaveStatus,
                         modifier = Modifier.weight(1f).fillMaxWidth(),
                     )
 
                     FmNavSection.SQUAD -> {
                         Column(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                            // Only OVERVIEW and TRAINING map to real features; the other
+                            // squad tabs are intentionally not offered (see audit doc).
                             FmTabRow(
+                                tabs = listOf(FmSquadTab.OVERVIEW, FmSquadTab.TRAINING),
                                 selectedTab = state.activeSquadTab,
                                 onTabSelected = onTabSelected,
                             )
@@ -192,15 +195,23 @@ fun SquadScreen(
                                         selectedPlayerId = clicked.id
                                     },
                                     modifier = Modifier.weight(0.68f).fillMaxHeight(),
+                                    starterIds = state.humanLineup.starters.toSet(),
                                 )
 
                                 if (selectedPlayer != null) {
                                     PlayerDetailContent(
                                         player = selectedPlayer,
-                                        onClose = {},
+                                        onClose = { selectedPlayerId = null },
                                         onUpdateTraining = { focus, intensity ->
                                             onUpdatePlayerTraining(selectedPlayer.id, focus, intensity)
                                         },
+                                        modifier = Modifier.weight(0.32f).fillMaxHeight(),
+                                    )
+                                } else {
+                                    FmEmptyState(
+                                        title = "No player selected",
+                                        detail = "Select a player from the table to inspect attributes, contract and training.",
+                                        icon = androidx.compose.material.icons.Icons.Outlined.Person,
                                         modifier = Modifier.weight(0.32f).fillMaxHeight(),
                                     )
                                 }
@@ -224,6 +235,7 @@ fun SquadScreen(
                     FmNavSection.MATCH -> MatchdayScreen(
                         state = state,
                         onSimulateMatchday = onContinueClick,
+                        onOpenTactics = { onNavSection(FmNavSection.TACTICS) },
                         modifier = Modifier.weight(1f).fillMaxWidth(),
                     )
 
@@ -235,9 +247,6 @@ fun SquadScreen(
                     FmNavSection.TRANSFERS -> TransfersScreen(
                         state = state,
                         onDirectTransfer = onDirectTransfer,
-                        onOfferContract = onOfferContract,
-                        onCompleteDeal = onCompleteDeal,
-                        onCancelDeal = onCancelDeal,
                         modifier = Modifier.weight(1f).fillMaxWidth(),
                     )
                 }

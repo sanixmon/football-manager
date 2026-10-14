@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.footballmanager.app.ui.components.FmSectionHeader
 import com.footballmanager.app.ui.components.PitchCanvas
 import com.footballmanager.app.ui.theme.FmAccentBlue
 import com.footballmanager.app.ui.theme.FmAccentCyan
@@ -92,7 +93,7 @@ fun TacticsScreen(
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("SHAPE", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 11.sp, letterSpacing = 0.5.sp)
+                FmSectionHeader(title = "SHAPE")
                 Formation.entries.forEach { f ->
                     val isSelected = currentFormation == f
                     Box(
@@ -189,7 +190,7 @@ fun TacticsScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item {
-                Text("TACTICAL SYSTEM", style = MaterialTheme.typography.labelSmall, color = FmAccentBlue, fontSize = 11.sp, letterSpacing = 0.5.sp)
+                FmSectionHeader(title = "TACTICS")
             }
             state.lineupValidationError?.let { error ->
                 item {
