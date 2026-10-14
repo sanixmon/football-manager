@@ -56,6 +56,7 @@ fun MainMenuScreen(
     onContinueGame: () -> Unit,
     onLoadGame: () -> Unit = {},
     onNewGame: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val club = state.humanClub
     val manager = state.currentSeason.managerProfile?.name ?: "Manager"

@@ -103,7 +103,8 @@ fun StandingsScreen(state: GameUiState, modifier: Modifier = Modifier) {
                                 .clickable { showPreviousSeason = true }
                                 .padding(horizontal = 8.dp, vertical = 3.dp),
                         ) {
-                            Text("PREVIOUS SEASON (Champ: ${lastSeason.champion.team.name})", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = if (showPreviousSeason) Color.White else FmTextSecondary)
+                            val champName = state.game.club(lastSeason.champion.team.clubId).name
+                            Text("PREVIOUS SEASON (Champ: $champName)", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = if (showPreviousSeason) Color.White else FmTextSecondary)
                         }
                     }
                 }
