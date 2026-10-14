@@ -61,6 +61,11 @@ object ModLoader {
                 shortName = modClub.shortName,
                 leagueId = leagueId,
                 squad = Squad(clubId, playerIds),
+                finance = com.footballmanager.model.Finance(
+                    balance = modClub.balance,
+                    transferBudget = modClub.transferBudget,
+                    weeklyWageBudget = modClub.weeklyWageBudget,
+                ),
                 defaultTactics = Tactics(parseFormation(modClub.formation), parseMentality(modClub.mentality)),
                 graphicsId = modClub.graphicsId,
             )

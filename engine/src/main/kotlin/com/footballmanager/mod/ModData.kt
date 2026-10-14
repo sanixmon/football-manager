@@ -33,6 +33,9 @@ data class ModClub(
     val formation: String = "4-4-2",
     val mentality: String = "Balanced",
     val graphicsId: Long? = null,
+    val balance: Long = 50_000_000L,
+    val transferBudget: Long = 20_000_000L,
+    val weeklyWageBudget: Long = 1_000_000L,
     val players: List<ModPlayer> = emptyList(),
 )
 
@@ -43,5 +46,6 @@ data class ModPlayer(
     val age: Int = 20,
     val nationality: String = "ID",
     val graphicsId: Long? = null,
+    val potential: Int = 75,
     val attributes: Map<String, Int> = emptyMap(),
 )

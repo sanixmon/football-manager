@@ -19,6 +19,7 @@ object PlayerMapper {
             modPlayer.attributes.entries.associate { (key, value) -> parseAttribute(key) to value },
         ),
         contract = Contract(expiresOn = contractExpiry),
+        potential = modPlayer.potential,
         graphicsId = modPlayer.graphicsId,
     )
 

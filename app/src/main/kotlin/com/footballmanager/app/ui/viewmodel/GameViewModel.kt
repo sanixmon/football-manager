@@ -37,7 +37,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 class GameViewModel(
-    private val gameRepository: GameRepository = InMemoryGameRepository(SeedData.game()),
+    private val gameRepository: GameRepository = InMemoryGameRepository(com.footballmanager.seed.LaLigaData.game()),
     private val runner: SeasonRunner = SeasonRunner(),
     private val selectLineupUseCase: SelectLineupUseCase = SelectLineupUseCase(),
     private val submitTransferBidUseCase: SubmitTransferBidUseCase = SubmitTransferBidUseCase(),
@@ -71,9 +71,12 @@ class GameViewModel(
     init {
         val game = gameRepository.getGame()
         val league = game.competitions.values.filterIsInstance<League>().firstOrNull()
-            ?: (game.competitions[SeedData.LEAGUE_ID] as? League)
             ?: error("No League competition found in Game")
-        val teams = SeedData.teams(game)
+        val teams = if (league.name.contains("LaLiga", ignoreCase = true)) {
+            com.footballmanager.seed.LaLigaData.teams(game)
+        } else {
+            SeedData.teams(game)
+        }
         val season = game.currentSeason ?: runner.start(
             league = league,
             teams = teams,
@@ -111,11 +114,16 @@ class GameViewModel(
     }
 
     fun startNewCareer(managerName: String, nationality: String, clubId: Long) {
-        val freshGame = SeedData.game()
+        val currentLeague = _uiState.value.game.competitions.values.filterIsInstance<League>().firstOrNull()
+        val isLaLiga = currentLeague?.name?.contains("LaLiga", ignoreCase = true) ?: true
+        val freshGame = if (isLaLiga) com.footballmanager.seed.LaLigaData.game() else SeedData.game()
         val league = freshGame.competitions.values.filterIsInstance<League>().firstOrNull()
-            ?: (freshGame.competitions[SeedData.LEAGUE_ID] as? League)
             ?: error("No League competition found in Game")
-        val teams = SeedData.teams(freshGame)
+        val teams = if (isLaLiga) {
+            com.footballmanager.seed.LaLigaData.teams(freshGame)
+        } else {
+            SeedData.teams(freshGame)
+        }
         val initialSeason = runner.start(
             league = league,
             teams = teams,

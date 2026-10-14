@@ -38,9 +38,8 @@ interface AppContainer {
 
 class DefaultAppContainer(
     saveFile: File? = null,
-    defaultGameProvider: () -> Game = { SeedData.game() },
+    defaultGameProvider: () -> Game = { com.footballmanager.seed.LaLigaData.game() },
 ) : AppContainer {
-
     private val saveDirectory: File = saveFile?.parentFile ?: File(".")
 
     override val gameRepository: GameRepository by lazy {
