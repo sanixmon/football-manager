@@ -40,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.footballmanager.app.ui.components.FmNavSection
+import com.footballmanager.app.ui.viewmodel.GameUiState
 import com.footballmanager.app.ui.theme.FmAccentBlue
 import com.footballmanager.app.ui.theme.FmAccentCyan
 import com.footballmanager.app.ui.theme.FmBorder
