@@ -171,7 +171,7 @@
         { "name": "Marc Roca", "position": "DM", "age": 29, "nationality": "ESP", "attributes": { "PASSING": 81, "DEFENDING": 79 } },
         { "name": "Sergi Altimira", "position": "CM", "age": 24, "nationality": "ESP", "attributes": { "PASSING": 79, "DRIBBLING": 78 } },
         { "name": "Giovani Lo Celso", "position": "AM", "age": 30, "nationality": "ARG", "attributes": { "PASSING": 85, "DRIBBLING": 84, "SHOOTING": 81 } },
-        { "name": "Pablo Fornals", "position": "AM", "age": 30, "nationality": "ESP", "attributes": { "PASSING": 82, "WORK_RATE": 85, "SHOOTING": 79 } },
+        { "name": "Pablo Fornals", "position": "AM", "age": 30, "nationality": "ESP", "attributes": { "PASSING": 82, "PHYSICAL": 82, "SHOOTING": 79 } },
         { "name": "Isco", "position": "AM", "age": 34, "nationality": "ESP", "attributes": { "DRIBBLING": 88, "PASSING": 87, "SHOOTING": 82 } },
         { "name": "Ez Abde", "position": "LW", "age": 24, "nationality": "MAR", "attributes": { "PACE": 89, "DRIBBLING": 86, "SHOOTING": 77 } },
         { "name": "Vitor Roque", "position": "ST", "age": 21, "nationality": "BRA", "potential": 88, "attributes": { "PACE": 86, "SHOOTING": 82, "PHYSICAL": 80 } },
